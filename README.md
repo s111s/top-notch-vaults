@@ -10,6 +10,28 @@ Pick a strategy ranked by its returns and its honesty checks. An AI agent trades
 
 AI agents can trade, but nobody wants to hand one their keys, and nobody can tell a lucky backtest from a real edge. Copy-trading and signal groups ask you to trust screenshots or give up custody. NEAR's own framing: the blocker for agents is trust with real money.
 
+## What we want to do
+
+A marketplace on NEAR where **investors** follow trading strategies with a provable track record from a vault only they control, and **researchers** earn from every trade their strategy makes. NEAR Intents (1Click) executes the trades and pays the fees, NEAR AI Cloud builds strategies and signs what the agent did, NEAR smart contracts hold the money, and the `top-notch.near` registry keeps every track record on-chain.
+
+## Two ways to profit
+
+- **Investors:** pick a strategy by its returns, drawdown and unseen-data results, point your vault at it, and the agent rebalances daily through NEAR Intents. Your vault is your own NEAR account: the agent can only swap within your caps; you can pause, switch or withdraw at any time from your wallet.
+- **Researchers:** build a strategy with NEAR AI Cloud (or your own formula), backtest it in seconds, save it on-chain from your wallet, and earn 20 bps of every swap a following vault makes, paid inside the 1Click swap. See who uses it, what it earned, and withdraw your fees from NEAR Intents.
+
+## Status
+
+| Live on NEAR mainnet today | Next |
+|---|---|
+| A real investor vault (`vault-1.top-notch.near`) with owner-only withdraw, pause, strategy switch and public/private listing | Open your own vault from the site (vault factory contract) |
+| Agent swaps through NEAR Intents 1Click, researcher and platform fees inside each swap | Automatic daily signals for strategies saved in the Lab |
+| Strategy cards, signals and audits on the `top-notch.near` registry | Run the agent inside NEAR AI Cloud's TEE (today the TEE writes and signs its daily note) |
+| Build with AI on NEAR AI Cloud (5 free per activated wallet, frontier model for 0.01 NEAR), verified in the browser | Longer price history, more tokens across chains via NEAR Intents |
+| Save a strategy on-chain from the Lab, publish its signal, use it in your vault | Paid strategy certification and managed-agent subscriptions |
+| Leaderboards, strategy usage and earnings, owner-only fee withdrawal | |
+
+Returns on the site are backtests unless marked live; simulated vaults are labelled.
+
 ## What a user gets, in order of what matters most
 
 | | |

@@ -46,6 +46,22 @@ export default function Home() {
       </div>
     </section>
 
+    <h2 style={{ margin: '8px 0 12px' }}>Two ways to profit on NEAR</h2>
+    <div className="grid g2" style={{ marginBottom: 16 }}>
+      <section className="card" style={{ margin: 0, borderColor: 'var(--accent)' }}>
+        <div className="eyebrow">For investors</div>
+        <h3 style={{ margin: '4px 0 6px', fontSize: 20 }}>Grow your crypto, keep your keys</h3>
+        <p className="hint" style={{ margin: 0 }}>Pick a strategy by its proven returns, point your vault at it, and an AI agent rebalances it daily through <b>NEAR Intents</b>. The vault is your own NEAR account: the agent can only swap within your caps, and you can pause or withdraw at any time. <b>NEAR AI Cloud</b> signs a daily note of what it did.</p>
+        <div className="row" style={{ marginTop: 10 }}><Link className="btn" href="/leaderboard/">Find a strategy</Link><Link className="btn ghost" href="/vault/">My vault</Link></div>
+      </section>
+      <section className="card" style={{ margin: 0, borderColor: 'var(--accent)' }}>
+        <div className="eyebrow">For researchers</div>
+        <h3 style={{ margin: '4px 0 6px', fontSize: 20 }}>Earn on every swap your strategy makes</h3>
+        <p className="hint" style={{ margin: 0 }}>Build a strategy with <b>NEAR AI Cloud</b> or your own formula, backtest it in seconds, and save it on the <b>NEAR registry</b> from your wallet. Every vault that follows it pays you 20 bps of each swap, inside the <b>1Click</b> swap itself, with no invoices. Your track record is timestamped on-chain.</p>
+        <div className="row" style={{ marginTop: 10 }}><Link className="btn" href="/lab/">Create a strategy</Link><Link className="btn ghost" href="/strategies/">My strategies</Link></div>
+      </section>
+    </div>
+
     <section className="card">
       <div className="spread"><h2 style={{ margin: 0 }}>What $100 did in each strategy</h2><Link href="/leaderboard/">Full leaderboard →</Link></div>
       <p className="hint" style={{ marginTop: 4 }}>From each strategy's published backtest on NEAR Intents prices, after fees, next to simply holding NEAR over the same days. The track record is timestamped on-chain, so it can't be rewritten later.</p>
@@ -79,8 +95,25 @@ export default function Home() {
     <div className="stack">{STACK.map((s) => <div className="card" key={s.tag}><div className="tag">{s.tag}</div><h3 style={{ marginTop: 4 }}>{s.title}</h3><p className="hint" style={{ margin: 0 }}>{s.text}</p></div>)}</div>
 
     <section className="card" style={{ marginTop: 16 }}>
-      <h2>For researchers: earn from every swap</h2>
-      <p style={{ marginTop: 0 }}>New to trading? In the <Link href="/lab/">Lab</Link>, pick research-backed skills and NEAR AI Cloud writes the strategy and explains it, or write your own formula. Backtest it in your browser in seconds. Strategies that pass the quality checks are published to the on-chain registry, and every vault that follows one pays its researcher 20 bps of each swap, settled inside 1Click.</p>
+      <h2 style={{ marginTop: 0 }}>Where we are</h2>
+      <p className="hint" style={{ marginTop: 0 }}><b style={{ color: 'var(--ink)' }}>Our goal:</b> a marketplace where anyone can follow a strategy with a provable track record from a vault only they control, and where the people who build strategies earn from every trade. All of it runs on NEAR.</p>
+      <div className="grid g2" style={{ gap: 20 }}>
+        <div><h3>Live on NEAR mainnet today</h3><ul className="hint" style={{ paddingLeft: 18, margin: 0, display: 'grid', gap: 4 }}>
+          <li>A real investor vault (<Link href="/vault/?id=vault-1.top-notch.near">example vault</Link>): owner-only withdraw, pause and strategy switch from your wallet</li>
+          <li>The agent's real swaps through NEAR Intents 1Click, with researcher and platform fees paid inside each swap</li>
+          <li>Strategy cards, daily signals and audits on the <code>top-notch.near</code> registry</li>
+          <li>Build with AI on NEAR AI Cloud: 5 free per activated wallet, frontier model for 0.01 NEAR, signatures verified in your browser</li>
+          <li>Save your strategy on-chain from the Lab, publish its signal, use it in your vault</li>
+          <li>Leaderboards, strategy usage and earnings, owner-only fee withdrawal from NEAR Intents</li>
+        </ul></div>
+        <div><h3>Next</h3><ul className="hint" style={{ paddingLeft: 18, margin: 0, display: 'grid', gap: 4 }}>
+          <li>Open your own vault from the site (a vault factory contract)</li>
+          <li>Automatic daily signals for strategies saved in the Lab</li>
+          <li>Run the agent inside NEAR AI Cloud's TEE, not only sign its notes there</li>
+          <li>Longer price history and more tokens across chains through NEAR Intents</li>
+        </ul>
+        <p className="hint">Backtest returns shown here are not live performance; simulated vaults are labelled as such.</p></div>
+      </div>
     </section>
   </>;
 }
