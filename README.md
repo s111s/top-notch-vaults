@@ -98,9 +98,16 @@ Every agent swap pays the researcher 20 bps and the platform 10 bps inside the 1
 
 Live: a free tier on the TEE model (5 generations per **activated** NEAR wallet: one NEP-413 signed message proves ownership, and the account must exist and hold at least 0.1 NEAR, so a fake wallet costs more than the free usage is worth) plus a paid "best quality" frontier option at 0.01 NEAR per generation. `worker/` is the relay (a Cloudflare Worker) that holds the platform's NEAR AI key, verifies the NEP-413 signature, checks the account on-chain, counts free usage per wallet, and verifies each 0.01 NEAR payment transaction once.
 
+## Built during the hackathon window
+
+- Every line in this repo was written during NEAR HACKATHON 2026: the first commit of the prototype `s111s/top-notch-audit` is 2026-11-13 09:25 UTC and this repo's first commit is 2026-11-14 11:13 UTC. No pre-hackathon code is reused.
+- `s111s/top-notch-audit` is this project's earlier prototype (same contracts and mainnet accounts), not a second entry. Top Notch Vaults is the author's only submission.
+- License: MIT (see `LICENSE`).
+
 ## Libraries and AI-generated code
 
-- App: `next`, `react`, `@hot-labs/near-connect`, `near-api-js`, `@defuse-protocol/one-click-sdk-typescript`, `viem` (ECDSA signature recovery). Contract: `near-sdk`. Agent: `near-api-js`, `@near-js/crypto`, `bs58`.
+- App: `next`, `react`, `react-dom`, `@hot-labs/near-connect`, `near-api-js`, `@defuse-protocol/one-click-sdk-typescript`, `viem` (ECDSA signature recovery). Contract: `near-sdk`. Agent: `near-api-js`, `@near-js/crypto`, `bs58`.
+- AI relay: a Cloudflare Worker (`worker/`, no npm dependencies). Dev only: `typescript`, `@types/*`, Rust `cargo` tests.
 - Data: NEAR RPC (FastNEAR, near.org), NearBlocks, NEAR Intents 1Click API, GeckoTerminal (prices of NEAR Intents pools), NEAR AI Cloud.
 - Much of the code and copy was written with Claude Code (Anthropic) under the author's direction, during the hackathon window. This repo is a rebuild of the author's earlier prototype `s111s/top-notch-audit` (same contracts and accounts) on a TypeScript stack.
 
