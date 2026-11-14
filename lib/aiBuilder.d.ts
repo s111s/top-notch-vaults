@@ -5,4 +5,10 @@ export const FILTERS: { id: string; label: string; hint: string; brief: string }
 export const RISKS: { id: string; label: string; hint: string; settings: Record<string, unknown> }[];
 export function comboKey(style: string, filters: string[]): string;
 export function sha256Hex(text: string): Promise<string>;
-export function generate(style: string, filters: string[], opts?: { apiKey?: string; fetchImpl?: typeof fetch }): Promise<any>;
+export function generate(style: string, filters: string[], opts?: { apiKey?: string; fetchImpl?: typeof fetch; model?: string }): Promise<any>;
+export const MODELS: { id: string; tier: 'free' | 'pro'; label: string; tee: boolean; usd: number; note: string }[];
+export const FREE_PER_WALLET: number;
+export const PRO_PRICE_YOCTO: string;
+export const PAY_TO: string;
+export const AUTH_RECIPIENT: string;
+export function authMessage(accountId: string, day: string): string;
