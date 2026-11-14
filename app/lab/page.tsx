@@ -38,8 +38,8 @@ function Inner() {
   return <>
     <div className="hero" style={{ paddingTop: 8 }}>
       <div className="eyebrow">Lab · for researchers</div>
-      <h1 style={{ fontSize: 32 }}>Test a trading idea in seconds.</h1>
-      <p className="lead" style={{ fontSize: 16 }}>Let NEAR AI build a strategy from the skills you pick, or write your own formula. Either way it's backtested on six months of NEAR Intents prices, in your browser. Good ones can be published as strategies that vaults follow, paying you on every swap.</p>
+      <h1 style={{ fontSize: 32 }}>Build a strategy with NEAR AI and see what it would have earned.</h1>
+      <p className="lead" style={{ fontSize: 16 }}>Pick research-backed skills and NEAR AI Cloud writes the strategy, or write your own formula. Either way it's backtested on six months of prices in your browser, after fees. Strategies that pass the quality checks can be listed for vaults to follow, paying you 20 bps on every swap.</p>
     </div>
     <AIBuilder onUse={applyAI} />
     <h2 style={{ margin: '24px 0 10px' }}>Or write your own formula</h2>

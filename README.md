@@ -1,26 +1,24 @@
 # Top Notch Vaults
 
-**Run a proven trading strategy from a vault only you can withdraw from.**
-Pick a strategy with an audited track record, fund your own NEAR vault, and an AI agent trades it through **NEAR Intents**. It can never take your money, and every day **NEAR AI Cloud** signs a note of what it did, which your browser verifies.
+**Grow your crypto with strategies that prove their profit, from a vault only you can withdraw from.**
+Pick a strategy ranked by its returns and its honesty checks. An AI agent trades your NEAR vault daily through **NEAR Intents**, can never take your money, and **NEAR AI Cloud** signs a note of every day's work, which your browser verifies. New to trading? **NEAR AI Cloud** builds a strategy from the skills you pick.
 
 > Built at NEAR HACKATHON 2026. Tracks: agents, defi, business.
 > Live app: https://s111s.github.io/top-notch-vaults/ · everything below runs on NEAR **mainnet**.
 
 ## The problem
 
-AI agents can trade, but nobody wants to hand one their keys. Copy-trading and signal groups ask you to trust screenshots or give up custody. NEAR's own framing: the blocker for agents is trust with real money.
+AI agents can trade, but nobody wants to hand one their keys, and nobody can tell a lucky backtest from a real edge. Copy-trading and signal groups ask you to trust screenshots or give up custody. NEAR's own framing: the blocker for agents is trust with real money.
 
-## What a user gets
+## What a user gets, in order of what matters most
 
 | | |
 |---|---|
-| **Your vault, your keys** | A NEAR account whose only full-access key is yours. A Rust contract lets the agent call one method, `swap`, for tokens you allow, under caps you set, a limited number of times a day, and only to a fresh NEAR Intents deposit address. Output and refunds land back in the vault. |
-| **Real strategies, honest numbers** | Researchers publish formula strategies with backtests, out-of-sample stats and an independent audit. Cards and daily signals are timestamped on-chain, so track records can't be backdated. Logic can stay hidden behind a hash. |
-| **Execution through NEAR Intents** | Every trade is a 1Click swap. The researcher's fee (20 bps) and the platform's (10 bps) are paid inside the swap via `appFees`: no custody, no billing. |
-| **A note you can verify** | Each day a model running in NEAR AI Cloud's TEE writes what the agent did and signs it. The page recovers the signer and checks it against the live TEE attestation. |
-| **Build a strategy with AI** | New researchers pick one of 8 research-backed core styles (momentum, trend following, mean reversion, short-term dip, breakout, low volatility, attention/volume surge, risk-adjusted momentum; each cites its paper), up to 3 of 8 skills (trend filter, calm markets, volume confirms, skip lottery spikes, liquid only, crash guard, don't chase, smooth trading), a holding horizon, the coins it may trade, a risk level and, optionally, their own idea in a sentence. A model in NEAR AI Cloud's TEE writes the formula and explains it in plain English; our code backtests it. The page proves the exact prompt, the unedited answer and the TEE signature. A step tracker shows what's running and what's left; the result shows labelled stats, which coins it trades and held each day, an interactive chart (hover a day to see holdings, 1M/3M/All, drawdown) and what to do next. Free from a signed library of 72 strategies (each style alone and with each skill). Fresh generations: **free** on DeepSeek V4.1 Flash (in NEAR AI's TEE) for activated NEAR wallets, 5 each; **best quality** on Claude Opus 5.5 for 0.01 NEAR, paid from your wallet; or unlimited with your own NEAR AI key. |
-| **Leaderboards that can't be gamed by luck** | Strategies ranked by trusted investors, funds, drawdown and unseen-data Sharpe; investors by profit %, profit $, volume and win rate. The Top Notch score weighs them all and pulls thin track records toward the middle. |
-| **Control from your wallet** | Pause, switch strategy or withdraw with NEAR Connect (HOT, Meteor, Intear, MyNearWallet, OKX…). A stranger who tries is rejected on-chain. |
+| **1. See the profit before you invest** | The home page shows what $100 did in each listed strategy next to simply holding NEAR, after fees. Leaderboards rank strategies by trusted investors, funds, drawdown and unseen-data Sharpe, and investors by profit %, profit $, volume and win rate. The Top Notch score weighs them all and pulls thin track records toward the middle, so luck doesn't win. |
+| **2. Your vault, your keys** | A NEAR account whose only full-access key is yours. A Rust contract lets the agent call one method, `swap`, for tokens you allow, under caps you set, a limited number of times a day, and only to a fresh NEAR Intents deposit address. Output and refunds land back in the vault. Pause, switch strategy or withdraw from your wallet (NEAR Connect: HOT, Meteor, Intear, MyNearWallet, OKX…); a stranger who tries is rejected on-chain. |
+| **3. Every trade through NEAR Intents** | Each trade is a 1Click swap at the best route. The researcher's fee (20 bps) and the platform's (10 bps) are paid inside the swap via `appFees`: no custody, no billing. |
+| **4. Build a strategy with NEAR AI** | Pick one of 8 research-backed core styles (momentum, trend following, mean reversion, short-term dip, breakout, low volatility, attention/volume surge, risk-adjusted momentum; each cites its paper), up to 3 of 8 skills (trend filter, calm markets, volume confirms, skip lottery spikes, liquid only, crash guard, don't chase, smooth trading), a holding horizon, the coins it may trade, a risk level and, optionally, your own idea in a sentence. A model in NEAR AI Cloud's TEE writes the formula and explains it in plain English; our code backtests it, so the AI never grades its own work. A step tracker shows progress; the result shows labelled stats, the coins it trades and held each day, an interactive chart (hover a day to see holdings, 1M/3M/All, drawdown) and what to do next. The page proves the exact prompt, the unedited answer and the TEE signature. Free from a signed library of 72 strategies; fresh ones are **free** on DeepSeek V4.1 Flash (in NEAR AI's TEE) for activated NEAR wallets, 5 each, **best quality** on Claude Opus 5.5 for 0.01 NEAR paid from your wallet, or unlimited with your own NEAR AI key. |
+| **5. Proof, not promises** | Strategy cards, daily signals and audits are timestamped on the `top-notch.near` registry, so track records can't be backdated, and hidden logic is pinned by a hash. Each day a model in NEAR AI Cloud's TEE writes what the agent did and signs it; the page recovers the signer and checks it against the live TEE attestation. An audit page tickmarks every agent swap. |
 
 ## NEAR stack
 
@@ -33,13 +31,13 @@ AI agents can trade, but nobody wants to hand one their keys. Copy-trading and s
 | **near-api-js** (`FailoverRpcProvider`) | every live read: keys, balances, policy, registry | `lib/near.ts`, `lib/vault.ts` |
 | **Registry contract** `top-notch.near` | strategy cards, signals, mandates, audit reports, append-only | `lib/market.js` |
 
-App: Next.js 15 + React 19 + TypeScript, static export to GitHub Pages. No backend: the browser talks to NEAR RPC, 1Click and NEAR AI Cloud directly.
+App: Next.js 15 + React 19 + TypeScript, static export to GitHub Pages. The browser talks to NEAR RPC, 1Click and NEAR AI Cloud directly; the only server is a small Cloudflare Worker (`worker/`) that holds the platform's NEAR AI key for free and paid AI generations.
 
 ## Try it in 2 minutes (no install)
 
 1. **Open** https://s111s.github.io/top-notch-vaults/
-   **You should see** the live demo vault `vault-1.top-notch.near` with its value, *1 full-access key: the investor's*, the agent's swap count and the strategy it follows.
-2. **Click "See a live vault".**
+   **You should see** *What $100 did in each strategy* ($100 → $X next to holding NEAR), then the live demo vault `vault-1.top-notch.near` with its value, *1 full-access key: the investor's*, the agent's swap count and the strategy it follows.
+2. **Click "See the live vault".**
    **You should see**
    - *Who can move your money*: three ✓ checks read live from the chain, including that the vault's only full-access key equals the owner's key.
    - *Holdings and the caps you set*: balances of NEAR, BTC, ETH and USDC with the agent's per-swap cap for each.
@@ -86,7 +84,7 @@ The agent (`agent/`, Node, its own `package.json`) needs the account keys, which
 
 ## Business model
 
-Every agent swap pays the researcher 20 bps and the platform 10 bps inside the 1Click swap. No custody, no pooled fund, no invoices. AI strategy building is pay-as-you-go: the signed library is free, fresh generations are paid per call (today with your own NEAR AI key; next, a few free per wallet and then a small NEAR fee per generation). Later: a monthly fee for managed agents and paid strategy certification.
+Every agent swap pays the researcher 20 bps and the platform 10 bps inside the 1Click swap. No custody, no pooled fund, no invoices. AI strategy building: the signed library is free, 5 fresh generations are free per activated wallet (we subsidise about $0.01 per user), and the frontier model costs 0.01 NEAR per generation, paid on-chain to `top-notch.near`. Roadmap: a monthly fee for managed agents and paid strategy certification.
 
 ### AI cost per user (measured Nov 14 on our Build with AI prompt, NEAR AI Cloud list prices)
 
@@ -98,7 +96,7 @@ Every agent swap pays the researcher 20 bps and the platform 10 bps inside the 1
 | Claude Sonnet 5.5 / GPT-6 Sol | proxied | ~$0.008 | $0.04 |
 | Claude Opus 5.5 | proxied | $0.014 | $0.07 |
 
-Plan: a free tier on the TEE model (5 generations per **activated** NEAR wallet: one NEP-413 signed message proves ownership, and the account must exist and hold at least 0.1 NEAR, so a fake wallet costs more than the free usage is worth), plus a paid "best quality" frontier option at about 0.01 NEAR per generation. Built: `worker/` is that relay (a Cloudflare Worker) that holds the platform's NEAR AI key, verifies the NEP-413 signature, checks the account on-chain, counts free usage per wallet, and verifies each 0.01 NEAR payment transaction once.
+Live: a free tier on the TEE model (5 generations per **activated** NEAR wallet: one NEP-413 signed message proves ownership, and the account must exist and hold at least 0.1 NEAR, so a fake wallet costs more than the free usage is worth) plus a paid "best quality" frontier option at 0.01 NEAR per generation. `worker/` is the relay (a Cloudflare Worker) that holds the platform's NEAR AI key, verifies the NEP-413 signature, checks the account on-chain, counts free usage per wallet, and verifies each 0.01 NEAR payment transaction once.
 
 ## Libraries and AI-generated code
 
@@ -109,6 +107,8 @@ Plan: a free tier on the TEE model (5 generations per **activated** NEAR wallet:
 ## Honest limits
 
 - Opening a vault for a new visitor isn't self-serve yet (needs a vault factory contract); the demo vault is real and on mainnet. Roadmap: one-click vault factory.
+- Publishing a strategy is a `publish_mandate` call made from the command line today; one-click publish from the Lab is on the roadmap.
+- Home-page and leaderboard returns are backtests (plus one small live vault), not audited live performance. Rows tagged Simulated are labelled as such.
 - About 6 months of daily data on a few liquid tokens: stats are noisy. Out-of-sample results and gates are shown everywhere, including where a strategy fails them.
 - Long-only (swaps can't short). Demo sizes are tiny ($1–$5).
 - The vault can't prove a deposit address belongs to 1Click; a compromised agent could misdirect at most one capped swap per call within the daily limit. The audit flags any deposit without a 1Click settlement and the owner can pause at once.

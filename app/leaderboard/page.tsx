@@ -53,8 +53,8 @@ export default function Leaderboard() {
   return <>
     <div className="hero" style={{ paddingTop: 8 }}>
       <div className="eyebrow">Leaderboard</div>
-      <h1 style={{ fontSize: 32 }}>Who's actually top notch.</h1>
-      <p className="lead" style={{ fontSize: 16 }}>Rank strategies and investors by any stat, or by the Top Notch score, which weighs them all and discounts thin track records. Live rows are read from NEAR mainnet as you load the page.</p>
+      <h1 style={{ fontSize: 32 }}>Find the strategies that actually make money.</h1>
+      <p className="lead" style={{ fontSize: 16 }}>Rank strategies and investors by profit, drawdown, investors or win rate, or by the Top Notch score, which weighs them all and discounts thin track records so luck doesn't win. Live rows are read from NEAR mainnet as you load the page.</p>
       <div className="row">
         <button className={tab === 'strategies' ? '' : 'ghost'} onClick={() => setTab('strategies')}>Top strategies</button>
         <button className={tab === 'investors' ? '' : 'ghost'} onClick={() => setTab('investors')}>Top investors</button>

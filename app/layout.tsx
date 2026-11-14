@@ -5,7 +5,7 @@ import { Nav } from '@/components/Nav';
 
 export const metadata: Metadata = {
   title: 'Top Notch Vaults',
-  description: 'Run a proven trading strategy from a NEAR vault only you can withdraw from. An AI agent trades it through NEAR Intents, and NEAR AI Cloud signs what it did.',
+  description: 'Grow your crypto with strategies that prove their profit, from a NEAR vault only you can withdraw from. An AI agent trades it through NEAR Intents; NEAR AI Cloud signs what it did and helps anyone build a strategy.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
