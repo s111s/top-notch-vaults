@@ -7,10 +7,15 @@ import { useWallet } from '@/lib/wallet';
 import { REGISTRY, isPublic, visibilityRecord } from '@/lib/vaults';
 
 type Result = { ok: boolean; text: string; tx?: string };
-const reason = (e: unknown) => {
+// The deployed contract aborts on a failed check (panic = "abort"), so some RPCs report a bare
+// "WebAssembly trap" instead of the message. For a call whose only possible failure is the role
+// check, `refused` names that check.
+const reason = (e: unknown, refused?: string) => {
   const s = String((e as Error)?.message ?? e);
   const m = s.match(/only the (owner|agent)[^"\\]*/i);
-  return m ? `The vault contract refused: "${m[0]}".` : s.slice(0, 220);
+  if (m) return `The vault contract refused: "${m[0]}".`;
+  if (refused && /ExecutionError|WebAssembly trap|unreachable/i.test(s)) return `The vault contract refused: "${refused}".`;
+  return s.slice(0, 220);
 };
 
 export function OwnerControls({ vault, isOwner, onDone }: { vault: VaultState; isOwner: boolean; onDone: () => void }) {
@@ -41,13 +46,13 @@ export function OwnerControls({ vault, isOwner, onDone }: { vault: VaultState; i
     }).catch(() => {});
   }, [vault.strategy.account]);
 
-  async function run(label: string, method: string, args: Record<string, unknown>, gasTgas = 50) {
+  async function run(label: string, method: string, args: Record<string, unknown>, gasTgas = 50, refused?: string) {
     setBusy(true); setRes(null);
     try {
       const tx = await call({ receiverId: vault.id, method, args, gasTgas });
       setRes({ ok: true, text: `${label}: done.`, tx });
       onDone();
-    } catch (e) { setRes({ ok: false, text: reason(e), tx: (e as { tx?: string }).tx }); }
+    } catch (e) { setRes({ ok: false, text: reason(e, refused), tx: (e as { tx?: string }).tx }); }
     setBusy(false);
   }
   const held = vault.holdings.find((h) => h.sym === token);
@@ -88,8 +93,8 @@ export function OwnerControls({ vault, isOwner, onDone }: { vault: VaultState; i
       {accountId && !isOwner && <>
         <p>You're signed in as <code>{accountId}</code>, which is not this vault's owner. So you can't move its money, and neither can we. Try it:</p>
         <div className="row">
-          <button className="danger" disabled={busy} onClick={() => run('Withdraw', 'withdraw', { token: ASSETS.USDC.contract, amount: '1' }, 30)}>Try to withdraw from this vault</button>
-          <button className="ghost" disabled={busy} onClick={() => run('Swap', 'swap', { token: ASSETS.USDC.contract, amount: '1', deposit_address: '0'.repeat(64) }, 30)}>Try to trade it as the agent</button>
+          <button className="danger" disabled={busy} onClick={() => run('Withdraw', 'withdraw', { token: ASSETS.USDC.contract, amount: '1' }, 30, 'only the owner')}>Try to withdraw from this vault</button>
+          <button className="ghost" disabled={busy} onClick={() => run('Swap', 'swap', { token: ASSETS.USDC.contract, amount: '1', deposit_address: '0'.repeat(64) }, 30, 'only the agent can swap')}>Try to trade it as the agent</button>
         </div>
         <p className="hint">Your wallet sends a real mainnet transaction (costs about 0.0003 NEAR in gas). The vault contract rejects it, and the receipt on NearBlocks shows why.</p>
       </>}
