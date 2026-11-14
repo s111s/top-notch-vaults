@@ -348,7 +348,9 @@ var index_default = {
           await checkPayment(env, who.accountId, payTx);
         }
         try {
-          const g = await generate(style, filters, { apiKey: env.NEAR_AI_API_KEY, model: model.id });
+          const apiKey = tier === "pro" ? env.NEAR_AI_API_KEY_PRO || env.NEAR_AI_API_KEY : env.NEAR_AI_API_KEY;
+          if (!apiKey) throw httpError(503, "The AI relay has no NEAR AI key configured yet.");
+          const g = await generate(style, filters, { apiKey, model: model.id });
           return json({ ...g, tier, accountId: who.accountId, free_left: tier === "free" ? FREE_PER_WALLET - used - 1 : void 0 }, 200, h);
         } catch (e) {
           if (tier === "free") await env.USAGE.put(`free:${who.accountId}`, String(used));

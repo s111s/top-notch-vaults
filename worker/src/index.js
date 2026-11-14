@@ -3,7 +3,7 @@
 //   free tier: an activated NEAR wallet (exists on-chain, holds >= 0.1 NEAR, proves ownership with a
 //              NEP-413 signed message) gets FREE_PER_WALLET generations on the TEE model;
 //   pro tier:  any wallet that paid 0.01 NEAR to top-notch.near in a transaction we haven't seen before.
-// Bindings: secret NEAR_AI_API_KEY, KV namespace USAGE. Optional var ALLOWED_ORIGINS (comma separated).
+// Bindings: secret NEAR_AI_API_KEY (free tier), optional secret NEAR_AI_API_KEY_PRO (paid tier), KV namespace USAGE. Optional var ALLOWED_ORIGINS (comma separated).
 import { generate, MODELS, STYLES, FILTERS, FREE_PER_WALLET, PRO_PRICE_YOCTO, PAY_TO, AUTH_RECIPIENT, authMessage } from '../../lib/aiBuilder.js';
 
 const RPCS = ['https://rpc.mainnet.fastnear.com', 'https://rpc.mainnet.near.org'];
@@ -106,7 +106,9 @@ export default {
           await checkPayment(env, who.accountId, payTx);
         }
         try {
-          const g = await generate(style, filters, { apiKey: env.NEAR_AI_API_KEY, model: model.id });
+          const apiKey = tier === 'pro' ? (env.NEAR_AI_API_KEY_PRO || env.NEAR_AI_API_KEY) : env.NEAR_AI_API_KEY;
+          if (!apiKey) throw httpError(503, 'The AI relay has no NEAR AI key configured yet.');
+          const g = await generate(style, filters, { apiKey, model: model.id });
           return json({ ...g, tier, accountId: who.accountId, free_left: tier === 'free' ? FREE_PER_WALLET - used - 1 : undefined }, 200, h);
         } catch (e) {
           if (tier === 'free') await env.USAGE.put(`free:${who.accountId}`, String(used)); // refund a failed attempt
