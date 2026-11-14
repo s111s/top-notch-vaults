@@ -1,6 +1,8 @@
 'use client';
 import { Stat } from '@/components/LabResult';
 import { UseInVault } from '@/components/UseInVault';
+import { StrategyEarnings } from '@/components/StrategyEarnings';
+import { loadUsage, type Usage } from '@/lib/earnings';
 import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -15,8 +17,9 @@ function Inner() {
   const [s, setS] = useState<any>(undefined);
   const [report, setReport] = useState<any>(null);
   const [curve, setCurve] = useState<any>(null);
+  const [usage, setUsage] = useState<Usage | null>(null);
   useEffect(() => {
-    loadMarket([acct]).then((m) => setS(m.strategies.find((x) => x.account === acct && x.id === id) ?? null)).catch(() => setS(null));
+    loadMarket([acct]).then((m) => { setS(m.strategies.find((x) => x.account === acct && x.id === id) ?? null); loadUsage(m).then((u) => setUsage(u[`${acct}/${id}`] ?? null)).catch(() => {}); }).catch(() => setS(null));
     fetch(asset(`/data/strategy-report-${id}.json`)).then((r) => (r.ok ? r.json() : null)).then(setReport).catch(() => {});
     fetch(asset(`/data/curve-${id}.json`)).then((r) => (r.ok ? r.json() : null)).then(setCurve).catch(() => {});
   }, [acct, id]);
@@ -32,6 +35,7 @@ function Inner() {
       <div className="row"><a className="btn" href="#use">Use in my vault</a><Link className="btn ghost" href="/vaults/">See vaults</Link><span className="hint">{c.fee.bps} bps per follower swap to the researcher, paid inside 1Click</span></div>
     </div>
     <section className="card"><UseInVault strategyKey={`${acct}/${c.id}`} name={c.name} /></section>
+    <StrategyEarnings account={acct} usage={usage} feeBps={c.fee.bps} />
     <section className="card">
       <h2>Backtest ({c.data.from} → {c.data.to}, {st.days} days, fees included)</h2>
       <div className="tiles">
