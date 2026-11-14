@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { backtest, checkGates, FUNCTIONS, num, pct } from '@/lib/alpha';
 import { asset } from '@/lib/config';
 import { Chart } from '@/components/Chart';
+import { AIBuilder } from '@/components/AIBuilder';
 
 const IDEAS: { name: string; expr: string; hint: string }[] = [
   { name: 'Buy the dip', expr: '-ts_delta(close, 3) / delay(close, 3)', hint: 'Buy what fell most in the last 3 days.' },
@@ -19,12 +20,17 @@ function Inner() {
   const [prices, setPrices] = useState<any>(null);
   const [r, setR] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [extra, setExtra] = useState<Record<string, unknown>>({});
   useEffect(() => { fetch(asset('/data/prices.json')).then((x) => x.json()).then(setPrices); }, []);
-  const run = useCallback((e?: string) => {
+  const run = useCallback((e?: string, more: Record<string, unknown> = extra) => {
     if (!prices) return;
     setErr(null);
-    try { setR(backtest(e ?? expr, prices, { top_n: 3, cash_if_negative: true, fee_bps: 35, max_weight: 1, universe: Object.keys(prices.tokens) })); } catch (x) { setErr((x as Error).message); setR(null); }
-  }, [expr, prices]);
+    try { setR(backtest(e ?? expr, prices, { top_n: 3, cash_if_negative: true, fee_bps: 35, max_weight: 1, universe: Object.keys(prices.tokens), ...more })); } catch (x) { setErr((x as Error).message); setR(null); }
+  }, [expr, prices, extra]);
+  const applyAI = (formula: string, settings: Record<string, unknown>) => {
+    setExpr(formula); setExtra(settings); run(formula, settings);
+    setTimeout(() => document.getElementById('result')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
   useEffect(() => { if (prices) run(); }, [prices]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const s = r?.stats, o = r?.out_of_sample;
@@ -34,15 +40,17 @@ function Inner() {
     <div className="hero" style={{ paddingTop: 8 }}>
       <div className="eyebrow">Lab · for researchers</div>
       <h1 style={{ fontSize: 32 }}>Test a trading idea in seconds.</h1>
-      <p className="lead" style={{ fontSize: 16 }}>Write a formula and backtest it on six months of NEAR Intents prices, all in your browser. Good ones can be published as strategies that vaults follow, paying you on every swap.</p>
+      <p className="lead" style={{ fontSize: 16 }}>Let NEAR AI build a strategy from the skills you pick, or write your own formula. Either way it's backtested on six months of NEAR Intents prices, in your browser. Good ones can be published as strategies that vaults follow, paying you on every swap.</p>
     </div>
+    <AIBuilder onUse={applyAI} />
+    <h2 style={{ margin: '24px 0 10px' }}>Or write your own formula</h2>
     <section className="card">
-      <div className="row" style={{ marginBottom: 10 }}>{IDEAS.map((i) => <button key={i.name} className="ghost" title={i.hint} onClick={() => { setExpr(i.expr); run(i.expr); }}>{i.name}</button>)}</div>
+      <div className="row" style={{ marginBottom: 10 }}>{IDEAS.map((i) => <button key={i.name} className="ghost" title={i.hint} onClick={() => { setExpr(i.expr); setExtra({}); run(i.expr, {}); }}>{i.name}</button>)}</div>
       <textarea rows={2} value={expr} onChange={(e) => setExpr(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) run(); }} aria-label="Formula" />
-      <div className="row" style={{ marginTop: 10 }}><button onClick={() => run()} disabled={!prices}>{prices ? 'Run backtest' : 'Loading prices…'}</button><span className="hint">Holds the top 3 tokens by your score each day, USDC when none scores above zero. 35 bps cost per trade.</span></div>
+      <div className="row" style={{ marginTop: 10 }}><button onClick={() => run()} disabled={!prices}>{prices ? 'Run backtest' : 'Loading prices…'}</button><span className="hint">Holds the top {String((extra.top_n as number) ?? 3)} tokens by your score each day, USDC when none scores above zero. 35 bps cost per trade.</span></div>
       {err && <div className="toast bad">{err}</div>}
     </section>
-    {r && <section className="card">
+    {r && <section className="card" id="result">
       <h2>{end ? `$100 became $${(end.equity * 100).toFixed(0)}. Holding NEAR: $${(end.bench * 100).toFixed(0)}.` : 'Result'}</h2>
       <div className="tiles">
         <div className="tile"><b>{num(s.sharpe)}</b><span>Sharpe (return per unit of risk)</span></div>

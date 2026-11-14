@@ -18,6 +18,7 @@ AI agents can trade, but nobody wants to hand one their keys. Copy-trading and s
 | **Real strategies, honest numbers** | Researchers publish formula strategies with backtests, out-of-sample stats and an independent audit. Cards and daily signals are timestamped on-chain, so track records can't be backdated. Logic can stay hidden behind a hash. |
 | **Execution through NEAR Intents** | Every trade is a 1Click swap. The researcher's fee (20 bps) and the platform's (10 bps) are paid inside the swap via `appFees`: no custody, no billing. |
 | **A note you can verify** | Each day a model running in NEAR AI Cloud's TEE writes what the agent did and signs it. The page recovers the signer and checks it against the live TEE attestation. |
+| **Build a strategy with AI** | New researchers pick a style (momentum, mean reversion, dip buying, breakout), extra skills (trend, calm markets, volume) and a risk level. A model in NEAR AI Cloud's TEE writes the formula and explains it in plain English; our code backtests it. The page proves the exact prompt, the unedited answer and the TEE signature. Free from a signed library of all 32 combos; fresh generations are pay-as-you-go with your own NEAR AI key. |
 | **Leaderboards that can't be gamed by luck** | Strategies ranked by trusted investors, funds, drawdown and unseen-data Sharpe; investors by profit %, profit $, volume and win rate. The Top Notch score weighs them all and pulls thin track records toward the middle. |
 | **Control from your wallet** | Pause, switch strategy or withdraw with NEAR Connect (HOT, Meteor, Intear, MyNearWallet, OKX…). A stranger who tries is rejected on-chain. |
 
@@ -27,7 +28,7 @@ AI agents can trade, but nobody wants to hand one their keys. Copy-trading and s
 |---|---|---|
 | **NEAR Intents · 1Click API** (`@defuse-protocol/one-click-sdk-typescript`) | live dry quotes on the page; real swaps by the agent, fees in `appFees` | `lib/oneclick.ts`, `agent/managed-agent.mjs` |
 | **NEAR smart contracts** (Rust, `near-sdk`) | the vault: agent may only `swap`/`wrap_near`; owner may `withdraw`, `set_paused`, `set_policy`, `set_agent` (13 unit tests) | `contract/src/lib.rs` |
-| **NEAR AI Cloud** (TEE, OpenAI-compatible API) | signed daily note and audit letters; attestation checked in the browser | `lib/signature.ts`, `agent/letter.mjs` |
+| **NEAR AI Cloud** (TEE, OpenAI-compatible API) | AI strategy builder; signed daily note and audit letters; signature, request/response hashes and attestation checked in the browser | `lib/aiBuilder.js`, `components/AIBuilder.tsx`, `lib/signature.ts`, `agent/ai-library.mjs`, `agent/letter.mjs` |
 | **NEAR Connect** (`@hot-labs/near-connect`) | wallet login and owner transactions | `lib/wallet.tsx`, `components/OwnerControls.tsx` |
 | **near-api-js** (`FailoverRpcProvider`) | every live read: keys, balances, policy, registry | `lib/near.ts`, `lib/vault.ts` |
 | **Registry contract** `top-notch.near` | strategy cards, signals, mandates, audit reports, append-only | `lib/market.js` |
@@ -83,7 +84,7 @@ The agent (`agent/`, Node, its own `package.json`) needs the account keys, which
 
 ## Business model
 
-Every agent swap pays the researcher 20 bps and the platform 10 bps inside the 1Click swap. No custody, no pooled fund, no invoices. Later: a monthly fee for managed agents and paid strategy certification.
+Every agent swap pays the researcher 20 bps and the platform 10 bps inside the 1Click swap. No custody, no pooled fund, no invoices. AI strategy building is pay-as-you-go: the signed library is free, fresh generations are paid per call (today with your own NEAR AI key; next, a few free per wallet and then a small NEAR fee per generation). Later: a monthly fee for managed agents and paid strategy certification.
 
 ## Libraries and AI-generated code
 
