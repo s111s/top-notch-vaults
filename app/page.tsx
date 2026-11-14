@@ -23,7 +23,7 @@ export default function Home() {
       <p className="lead">Pick a strategy with an audited track record. Fund your own NEAR vault. An AI agent trades it through NEAR Intents, can never take your money, and every day NEAR AI Cloud signs a note of what it did.</p>
       <div className="row">
         <Link className="btn" href="/vault/">See a live vault</Link>
-        <Link className="btn ghost" href="/strategies/">Browse strategies</Link>
+        <Link className="btn ghost" href="/leaderboard/">See the leaderboard</Link>
         {!accountId && <button className="ghost" onClick={connect} disabled={!ready}>Connect wallet</button>}
       </div>
     </section>

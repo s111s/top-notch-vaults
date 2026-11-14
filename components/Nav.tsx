@@ -8,6 +8,7 @@ const LINKS = [
   { href: '/', label: 'Home' },
   { href: '/vault/', label: 'My vault' },
   { href: '/strategies/', label: 'Strategies' },
+  { href: '/leaderboard/', label: 'Leaderboard' },
   { href: '/lab/', label: 'Lab' },
 ];
 

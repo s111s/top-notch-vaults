@@ -18,6 +18,7 @@ AI agents can trade, but nobody wants to hand one their keys. Copy-trading and s
 | **Real strategies, honest numbers** | Researchers publish formula strategies with backtests, out-of-sample stats and an independent audit. Cards and daily signals are timestamped on-chain, so track records can't be backdated. Logic can stay hidden behind a hash. |
 | **Execution through NEAR Intents** | Every trade is a 1Click swap. The researcher's fee (20 bps) and the platform's (10 bps) are paid inside the swap via `appFees`: no custody, no billing. |
 | **A note you can verify** | Each day a model running in NEAR AI Cloud's TEE writes what the agent did and signs it. The page recovers the signer and checks it against the live TEE attestation. |
+| **Leaderboards that can't be gamed by luck** | Strategies ranked by trusted investors, funds, drawdown and unseen-data Sharpe; investors by profit %, profit $, volume and win rate. The Top Notch score weighs them all and pulls thin track records toward the middle. |
 | **Control from your wallet** | Pause, switch strategy or withdraw with NEAR Connect (HOT, Meteor, Intear, MyNearWallet, OKX…). A stranger who tries is rejected on-chain. |
 
 ## NEAR stack
@@ -52,7 +53,9 @@ App: Next.js 15 + React 19 + TypeScript, static export to GitHub Pages. No backe
    **You should see** the backtest vs holding NEAR, the five listing gates (it honestly fails out-of-sample), its public formula, a **Clean** audit with four ✓ checks and a letter signed in NEAR AI Cloud, and its on-chain signals.
 7. **Open the Lab**, click *Ride the trend* or type `rank(ts_mean(returns, 14)) - 0.5`, press **Run backtest**.
    **You should see** "$100 became $X. Holding NEAR: $Y", four stats, an equity curve and the gates, computed in your browser.
-8. **Open** `/audit/` and press **Run the audit**.
+8. **Open Leaderboard.**
+   **You should see** *Top strategies* ranked by the Top Notch score (Dip in an uptrend first: best out-of-sample Sharpe and lowest drawdown), with buttons to rank by trusted investors, funds invested, lowest drawdown, Sharpe or out-of-sample Sharpe. Switch to *Top investors* to rank vaults by profit %, profit $, amount traded, win rate or the score. `vault-1.top-notch.near` is tagged **Live on mainnet**; the other rows are tagged **Simulated** (computed from each strategy's backtest) and the checkbox hides them.
+9. **Open** `/audit/` and press **Run the audit**.
    **You should see** each agent swap tickmarked: allowed token, size, slippage, settled, signal in force, toward the signal, through the vault, researcher paid.
 
 ## Run it yourself
