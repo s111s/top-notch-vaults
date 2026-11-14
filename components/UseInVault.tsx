@@ -2,13 +2,21 @@
 // "Use in my vault": the vault owner points their vault at a strategy with one set_policy call,
 // signed in their own wallet. The agent trades toward that strategy's on-chain signal from its next run.
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DEMO_VAULT, explorerTx } from '@/lib/config';
 import { loadVault, type VaultState } from '@/lib/vault';
 import { vaultsOwnedBy } from '@/lib/vaults';
 import { useWallet } from '@/lib/wallet';
 
-export function UseInVault({ strategyKey, name }: { strategyKey: string; name: string }) {
+export function UseInVault({ strategyKey, name, ping = 0 }: { strategyKey: string; name: string; ping?: number }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [flash, setFlash] = useState(false);
+  // A "Use in my vault" button elsewhere on the page brings this panel into view and highlights it.
+  useEffect(() => {
+    if (!ping) return;
+    box.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setFlash(true); const t = setTimeout(() => setFlash(false), 1600); return () => clearTimeout(t);
+  }, [ping]);
   const { accountId, connect, ready, call } = useWallet();
   const [vaults, setVaults] = useState<VaultState[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -31,11 +39,11 @@ export function UseInVault({ strategyKey, name }: { strategyKey: string; name: s
   }
 
   return (
-    <div className="tile" id="use">
+    <div className={`tile ${flash ? 'flash' : ''}`} id="use" ref={box}>
       <h3 style={{ marginTop: 0 }}>Use this strategy in my vault</h3>
       {!accountId && <><p className="hint">Connect the wallet that owns your vault. Switching is one transaction you sign; only the vault's owner can do it.</p><button onClick={connect} disabled={!ready}>Connect wallet</button></>}
       {accountId && !vaults && <p className="hint">Looking for vaults owned by <code>{accountId}</code>…</p>}
-      {accountId && vaults && !vaults.length && <p className="hint"><code>{accountId}</code> doesn't own a vault yet. Opening a vault from the site is next on our roadmap (a vault factory). Until then, see how it works on the <Link href={`/vault/?id=${DEMO_VAULT}`}>example vault</Link>.</p>}
+      {accountId && vaults && !vaults.length && <p className="toast"><code>{accountId}</code> doesn&apos;t own a vault yet. Opening a vault from the site is next on our roadmap (a vault factory). Until then, see how it works on the <Link href={`/vault/?id=${DEMO_VAULT}`}>example vault</Link>.</p>}
       {vaults?.map((v) => <div key={v.id} className="row" style={{ marginTop: 6 }}>
         {v.policy.strategy === strategyKey
           ? <><span className="pill ok">✓ {v.id} follows this strategy</span><Link href={`/vault/?id=${encodeURIComponent(v.id)}`}>Open vault →</Link></>

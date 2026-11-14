@@ -1,6 +1,7 @@
 'use client';
 import { Stat } from '@/components/LabResult';
 import { UseInVault } from '@/components/UseInVault';
+import { useWallet } from '@/lib/wallet';
 import { StrategyEarnings } from '@/components/StrategyEarnings';
 import { loadUsage, type Usage } from '@/lib/earnings';
 import Link from 'next/link';
@@ -18,6 +19,10 @@ function Inner() {
   const [report, setReport] = useState<any>(null);
   const [curve, setCurve] = useState<any>(null);
   const [usage, setUsage] = useState<Usage | null>(null);
+  const [ping, setPing] = useState(0);
+  const { accountId, connect } = useWallet();
+  const wantUse = q.get('use') === '1';
+  useEffect(() => { if (s && (wantUse || (typeof location !== 'undefined' && location.hash === '#use'))) setTimeout(() => setPing((x) => x + 1), 200); }, [s, wantUse]);
   useEffect(() => {
     loadMarket([acct]).then((m) => { setS(m.strategies.find((x) => x.account === acct && x.id === id) ?? null); loadUsage(m).then((u) => setUsage(u[`${acct}/${id}`] ?? null)).catch(() => {}); }).catch(() => setS(null));
     fetch(asset(`/data/strategy-report-${id}.json`)).then((r) => (r.ok ? r.json() : null)).then(setReport).catch(() => {});
@@ -32,9 +37,9 @@ function Inner() {
       <div className="eyebrow">{c.visibility === 'hidden' ? 'Hidden logic' : 'Public logic'} · by {acct}</div>
       <h1 style={{ fontSize: 32 }}>{c.name}</h1>
       <p className="lead" style={{ fontSize: 16 }}>{c.description}</p>
-      <div className="row"><a className="btn" href="#use">Use in my vault</a><Link className="btn ghost" href="/vaults/">See vaults</Link><span className="hint">{c.fee.bps} bps per follower swap to the researcher, paid inside 1Click</span></div>
+      <div className="row"><button onClick={() => { if (!accountId) connect(); setPing((x) => x + 1); }}>Use in my vault</button><Link className="btn ghost" href="/vaults/">See vaults</Link><span className="hint">{c.fee.bps} bps per follower swap to the researcher, paid inside 1Click</span></div>
     </div>
-    <section className="card"><UseInVault strategyKey={`${acct}/${c.id}`} name={c.name} /></section>
+    <section className="card"><UseInVault strategyKey={`${acct}/${c.id}`} name={c.name} ping={ping} /></section>
     <StrategyEarnings account={acct} usage={usage} feeBps={c.fee.bps} />
     <section className="card">
       <h2>Backtest ({c.data.from} → {c.data.to}, {st.days} days, fees included)</h2>

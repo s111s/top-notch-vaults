@@ -63,7 +63,7 @@ export default function Strategies() {
           </div>
           <p className="hint">{c.fee.bps} bps per swap to <code>{s.account}</code> · {s.followers.length} vault agent{s.followers.length === 1 ? '' : 's'} following · {s.signals.length} signals on-chain</p>
           {u?.[`${s.account}/${s.id}`] && <p className="hint" style={{ marginTop: -6 }}>Used by <b>{u[`${s.account}/${s.id}`].users.length}</b> · {u[`${s.account}/${s.id}`].swaps} swaps · earned <b className="pos">{usd(u[`${s.account}/${s.id}`].fees)}</b></p>}
-          <div className="row"><Link className="btn" href={`/strategy/?a=${encodeURIComponent(s.account)}&id=${encodeURIComponent(s.id)}#use`}>Use in my vault</Link><Link className="btn ghost" href={`/strategy/?a=${encodeURIComponent(s.account)}&id=${encodeURIComponent(s.id)}`}>Details</Link></div>
+          <div className="row"><Link className="btn" href={`/strategy/?a=${encodeURIComponent(s.account)}&id=${encodeURIComponent(s.id)}&use=1`}>Use in my vault</Link><Link className="btn ghost" href={`/strategy/?a=${encodeURIComponent(s.account)}&id=${encodeURIComponent(s.id)}`}>Details</Link></div>
         </section>;
       })}
     </div>

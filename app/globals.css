@@ -102,3 +102,6 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--m
 .holdbar { display: grid; grid-template-columns: 64px 1fr 44px; gap: 8px; align-items: center; font-size: 13px; }
 .holdbar .t { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; } .holdbar .t i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
 a.stat:hover { border-color: var(--accent); text-decoration: none; }
+
+.flash { animation: flash 1.6s ease; }
+@keyframes flash { 0%, 60% { box-shadow: 0 0 0 3px var(--accent); border-color: var(--accent); } 100% { box-shadow: none; } }
