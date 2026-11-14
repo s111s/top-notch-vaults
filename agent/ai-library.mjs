@@ -26,5 +26,5 @@ async function worker() {
     } catch (e) { console.log(`${comboKey(s, f)} FAILED ${e.message}`); }
   }
 }
-await Promise.all([worker(), worker(), worker(), worker(), worker(), worker()]);
+await Promise.all(Array.from({ length: Number(process.env.WORKERS ?? 4) }, worker));
 console.log(`library: ${Object.keys(lib).length} strategies`);
