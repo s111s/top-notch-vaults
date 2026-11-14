@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { recoverMessageAddress } from 'viem';
-import { STYLES, FILTERS, RISKS, comboKey, generate, sha256Hex } from '@/lib/aiBuilder';
-import { attestedSigners } from '@/lib/signature';
-import { asset } from '@/lib/config';
+import { STYLES, FILTERS, RISKS, MODELS, FREE_PER_WALLET, PRO_PRICE_YOCTO, PAY_TO, AUTH_RECIPIENT, authMessage, comboKey, generate, sha256Hex } from '@/lib/aiBuilder';
+import { attestedGateway, attestedSigners } from '@/lib/signature';
+import { AI_RELAY, asset } from '@/lib/config';
+import { useWallet, type Auth } from '@/lib/wallet';
 
 export type Generation = {
   style: string; filters: string[]; model: string; chat_id: string; created_at: string;
@@ -25,6 +26,10 @@ export function AIBuilder({ onUse }: { onUse: (formula: string, settings: Record
   const [checks, setChecks] = useState<Check[] | null>(null);
   const [key, setKey] = useState('');
   const [showKey, setShowKey] = useState(false);
+  const [tier, setTier] = useState<'free' | 'pro' | 'own'>('free');
+  const [quota, setQuota] = useState<number | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const { accountId, connect, signAuth, transfer } = useWallet();
 
   useEffect(() => {
     fetch(asset('/data/ai-library.json')).then((r) => r.json()).then(setLib).catch(() => setLib({}));
@@ -42,8 +47,46 @@ export function AIBuilder({ onUse }: { onUse: (formula: string, settings: Record
   function build() {
     const x = lib?.[comboKey(style, filters)];
     if (x) show(x, false);
-    else { setShowKey(true); setErr('This combination is not in the free library yet. Generate it live with your NEAR AI key below.'); }
+    else { setShowKey(true); setErr('This combination is not in the library yet. Generate it fresh below.'); }
   }
+
+  // Free tier and paid frontier model go through our relay, which holds the platform's NEAR AI key.
+  async function getAuth(): Promise<Auth> {
+    const day = new Date().toISOString().slice(0, 10);
+    const k = `tn-ai-auth:${accountId}:${day}`;
+    try { const c = sessionStorage.getItem(k); if (c) return JSON.parse(c); } catch {}
+    setStatus('Sign the message in your wallet. It proves this is your wallet and costs no gas.');
+    const a = await signAuth(authMessage(accountId!, day), AUTH_RECIPIENT);
+    try { sessionStorage.setItem(k, JSON.stringify(a)); } catch {}
+    return a;
+  }
+  async function relay(path: string, body: Record<string, unknown>) {
+    const r = await fetch(`${AI_RELAY}${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({ error: `relay returned ${r.status}` }));
+    if (!r.ok) throw new Error(j.error || `relay returned ${r.status}`);
+    return j;
+  }
+  async function buildRelay() {
+    setBusy(true); setErr(null);
+    try {
+      const auth = await getAuth();
+      let payTx: string | undefined;
+      if (tier === 'pro') { setStatus('Approve the 0.01 NEAR payment to top-notch.near in your wallet.'); payTx = await transfer(PAY_TO, PRO_PRICE_YOCTO); }
+      setStatus(tier === 'free' ? 'NEAR AI Cloud is writing your strategy inside its TEE…' : 'Payment confirmed. The frontier model is writing your strategy…');
+      const out = await relay('/generate', { auth, style, filters, tier, payTx });
+      if (typeof out.free_left === 'number') setQuota(out.free_left);
+      setStatus(null);
+      show(out as Generation, true);
+    } catch (e) { setStatus(null); setErr((e as Error).message); }
+    setBusy(false);
+  }
+  useEffect(() => {
+    if (!accountId || !showKey || tier !== 'free') return;
+    const k = `tn-ai-auth:${accountId}:${new Date().toISOString().slice(0, 10)}`;
+    let cached: Auth | null = null;
+    try { const c = sessionStorage.getItem(k); if (c) cached = JSON.parse(c); } catch {}
+    if (cached) relay('/quota', { auth: cached }).then((q) => setQuota(q.left)).catch(() => {});
+  }, [accountId, showKey, tier]); // eslint-disable-line react-hooks/exhaustive-deps
   async function buildFresh() {
     if (!key.trim()) { setErr('Paste your NEAR AI Cloud API key first.'); return; }
     try { localStorage.setItem(KEY_STORE, key.trim()); } catch {}
@@ -59,7 +102,7 @@ export function AIBuilder({ onUse }: { onUse: (formula: string, settings: Record
     const [rq, rs] = await Promise.all([sha256Hex(g.request), sha256Hex(g.response)]);
     let signer = '';
     try { if (g.signed_text && g.signature) signer = (await recoverMessageAddress({ message: g.signed_text, signature: g.signature as `0x${string}` })).toLowerCase(); } catch {}
-    const live = await attestedSigners(g.model);
+    const [live, gw] = await Promise.all([attestedSigners(g.model), attestedGateway(g.model)]);
     const content = (() => { try { return JSON.parse(g.response).choices[0].message.content as string; } catch { return ''; } })();
     const sentPrompt = (() => { try { return (JSON.parse(g.request).messages as { role: string; content: string }[]).find((m) => m.role === 'user')!.content; } catch { return ''; } })();
     setChecks([
@@ -67,7 +110,11 @@ export function AIBuilder({ onUse }: { onUse: (formula: string, settings: Record
       { label: 'The answer is unedited', state: rs === respHash ? 'ok' : 'bad', detail: `sha256 of the model's raw response = ${rs.slice(0, 12)}…, signed ${respHash?.slice(0, 12)}…` },
       { label: 'The formula shown is the one the AI wrote', state: content.includes(g.answer.formula) ? 'ok' : 'bad', detail: g.answer.formula },
       { label: 'Signed inside the TEE', state: signer && signer === (g.signing_address ?? '').toLowerCase() ? 'ok' : 'bad', detail: signer ? `ECDSA signature recovers to ${signer}` : 'no signature' },
-      { label: 'Signer attested by NEAR AI Cloud now', state: live && live.includes(signer) ? 'ok' : 'bad', detail: live == null ? 'attestation endpoint not reachable' : live.includes(signer) ? `${model} attests this address (Intel TDX + NVIDIA GPU)` : `attested now: ${live.join(', ') || 'none'} (keys rotate when enclaves restart)` },
+      live && live.includes(signer)
+        ? { label: 'Signer attested by NEAR AI Cloud now', state: 'ok', detail: `the model runs in a TEE: ${model} attests this address (Intel TDX + NVIDIA GPU)` }
+        : gw && gw === signer
+          ? { label: "Signed by NEAR AI Cloud's attested gateway", state: 'ok', detail: `${model} is a proxied frontier model, so it doesn't run in NEAR AI's TEE; the attested gateway that relayed it signed the exchange (${gw})` }
+          : { label: 'Signer attested by NEAR AI Cloud now', state: 'bad', detail: live == null ? 'attestation endpoint not reachable' : `attested now: ${[...(live ?? []), gw].filter(Boolean).join(', ') || 'none'} (keys rotate when enclaves restart)` },
     ]);
   }
 
@@ -89,13 +136,25 @@ export function AIBuilder({ onUse }: { onUse: (formula: string, settings: Record
       <div className="row" style={{ marginTop: 16 }}>
         <button onClick={build} disabled={!lib}>{lib ? 'Build my strategy' : 'Loading…'}</button>
         <span className="hint">{lib ? (inLibrary ? 'Free: from the signed AI library.' : 'Not in the free library: generate it live below.') : ''}</span>
-        <button className="ghost" onClick={() => setShowKey((v) => !v)}>Generate fresh (pay-as-you-go)</button>
+        <button className="ghost" onClick={() => setShowKey((v) => !v)}>Generate fresh with NEAR AI</button>
       </div>
 
       {showKey && <div className="tile" style={{ marginTop: 12 }}>
-        <h3>Generate live on NEAR AI Cloud</h3>
-        <p className="hint" style={{ marginTop: 0 }}>Pay-as-you-go: you pay NEAR AI Cloud per call, a fraction of a cent, with your own key from <a href="https://cloud.near.ai" target="_blank" rel="noopener">cloud.near.ai</a>. The key stays in this browser and is sent only to cloud-api.near.ai. Coming next: pay per generation in NEAR straight from your wallet.</p>
-        <div className="row"><input type="password" placeholder="NEAR AI Cloud API key" value={key} onChange={(e) => setKey(e.target.value)} style={{ flex: 1, minWidth: 220 }} /><button onClick={buildFresh} disabled={busy}>{busy ? 'NEAR AI is writing…' : 'Generate'}</button></div>
+        <h3>Generate a fresh one, live on NEAR AI Cloud</h3>
+        <div className="grid g2" style={{ gap: 10, marginTop: 8 }}>
+          {MODELS.map((m) => <button key={m.id} className={tier === m.tier ? '' : 'ghost'} onClick={() => setTier(m.tier)} style={{ display: 'block', textAlign: 'left', whiteSpace: 'normal' }}>
+            <div>{m.tier === 'free' ? 'Free' : 'Best quality'} · {m.label} {m.tee ? '🔒' : ''}</div>
+            <div style={{ fontWeight: 400, fontSize: 13, opacity: .85 }}>{m.note}</div></button>)}
+          <button className={tier === 'own' ? '' : 'ghost'} onClick={() => setTier('own')} style={{ display: 'block', textAlign: 'left', whiteSpace: 'normal' }}>
+            <div>Your own NEAR AI key</div><div style={{ fontWeight: 400, fontSize: 13, opacity: .85 }}>Unlimited, you pay NEAR AI Cloud directly (about $0.002 a generation). The key stays in this browser.</div></button>
+        </div>
+        {tier !== 'own' && <div className="row" style={{ marginTop: 12 }}>
+          {!accountId ? <><button onClick={connect}>Connect wallet</button><span className="hint">{tier === 'free' ? `Free for activated NEAR wallets holding at least 0.1 NEAR: ${FREE_PER_WALLET} generations each. You sign one message (no gas) to prove it's your wallet.` : 'Pay 0.01 NEAR from your wallet per generation.'}</span></>
+            : <><button onClick={buildRelay} disabled={busy}>{busy ? 'NEAR AI is writing…' : tier === 'free' ? 'Generate free' : 'Pay 0.01 NEAR and generate'}</button>
+              <span className="hint">as <code>{accountId}</code>{quota != null && tier === 'free' ? ` · ${quota} free left` : ''}</span></>}
+        </div>}
+        {tier === 'own' && <div className="row" style={{ marginTop: 12 }}><input type="password" placeholder="NEAR AI Cloud API key (cloud.near.ai)" value={key} onChange={(e) => setKey(e.target.value)} style={{ flex: 1, minWidth: 220 }} /><button onClick={buildFresh} disabled={busy}>{busy ? 'NEAR AI is writing…' : 'Generate'}</button></div>}
+        {status && <div className="toast">{status}</div>}
       </div>}
       {err && <div className="toast bad">{err}</div>}
 

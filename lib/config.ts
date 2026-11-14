@@ -23,3 +23,4 @@ export const ASSETS: Record<string, Asset> = {
   USDC: { sym: 'USDC', assetId: `nep141:${USDC_CONTRACT}`, contract: USDC_CONTRACT, decimals: 6 },
 };
 export const assetByContract = (c: string): Asset | undefined => Object.values(ASSETS).find((a) => a.contract === c);
+export const AI_RELAY = process.env.NEXT_PUBLIC_AI_RELAY ?? 'https://top-notch-ai.s111s-7es.workers.dev';

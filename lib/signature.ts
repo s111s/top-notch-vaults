@@ -22,3 +22,12 @@ export async function attestedSigners(model: string): Promise<string[] | null> {
     return [...new Set(list.map((a) => a.toLowerCase()))];
   } catch { return null; }
 }
+
+/** For models NEAR AI Cloud proxies (not run in its own TEE), responses are signed by its attested gateway. */
+// The gateway is shared, so we read its attestation from the report of a TEE-hosted model.
+export async function attestedGateway(_model?: string): Promise<string | null> {
+  try {
+    const r = await fetch(`${NEAR_AI_API}/attestation/report?model=${encodeURIComponent('deepseek-ai/DeepSeek-V4.1-Flash-1017')}&signing_algo=ecdsa`).then((x) => x.json());
+    return r.gateway_attestation?.signing_address?.toLowerCase() ?? null;
+  } catch { return null; }
+}

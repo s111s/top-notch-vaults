@@ -6,7 +6,9 @@ import type { NearConnector } from '@hot-labs/near-connect';
 import { NETWORK } from './config';
 
 type Call = { receiverId: string; method: string; args: Record<string, unknown>; gasTgas?: number; depositYocto?: string };
-type Ctx = { accountId: string | null; ready: boolean; connect: () => Promise<void>; disconnect: () => Promise<void>; call: (c: Call) => Promise<string> };
+export type Auth = { accountId: string; publicKey: string; signature: string; message: string; nonce: string };
+type Ctx = { accountId: string | null; ready: boolean; connect: () => Promise<void>; disconnect: () => Promise<void>; call: (c: Call) => Promise<string>;
+  signAuth: (message: string, recipient: string) => Promise<Auth>; transfer: (receiverId: string, yocto: string) => Promise<string> };
 const WalletCtx = createContext<Ctx | null>(null);
 
 export function WalletProvider({ children }: { children: ReactNode }) {
@@ -44,7 +46,25 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     return out?.transaction?.hash ?? '';
   }, []);
 
-  return <WalletCtx.Provider value={{ accountId, ready, connect, disconnect, call }}>{children}</WalletCtx.Provider>;
+  // NEP-413 signed message: proves the visitor controls this account, costs no gas.
+  const signAuth = useCallback(async (message: string, recipient: string) => {
+    if (!ref.current) throw new Error('Wallet is still loading');
+    const w = await ref.current.wallet();
+    const nonce = crypto.getRandomValues(new Uint8Array(32));
+    const signed = await w.signMessage({ message, recipient, nonce });
+    const b64 = (u: Uint8Array) => btoa(String.fromCharCode(...u));
+    return { accountId: signed.accountId, publicKey: signed.publicKey, signature: signed.signature, message, nonce: b64(nonce) };
+  }, []);
+  const transfer = useCallback(async (receiverId: string, yocto: string) => {
+    if (!ref.current) throw new Error('Wallet is still loading');
+    const w = await ref.current.wallet();
+    const r = await w.signAndSendTransaction({ receiverId, actions: [{ type: 'Transfer', params: { deposit: yocto } }] });
+    const hash = (r as { transaction?: { hash?: string } })?.transaction?.hash;
+    if (!hash) throw new Error('The wallet did not return a transaction hash');
+    return hash;
+  }, []);
+
+  return <WalletCtx.Provider value={{ accountId, ready, connect, disconnect, call, signAuth, transfer }}>{children}</WalletCtx.Provider>;
 }
 
 export function useWallet() {
