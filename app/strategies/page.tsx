@@ -25,9 +25,9 @@ export default function Strategies() {
           <h2 style={{ margin: '10px 0 4px' }}><Link href={`/strategy/?a=${encodeURIComponent(s.account)}&id=${encodeURIComponent(s.id)}`}>{c.name}</Link></h2>
           <p className="hint" style={{ marginTop: 0 }}>{c.description}</p>
           <div className="tiles">
-            <div className="tile"><b>{num(st.sharpe)}</b><span>Sharpe</span></div>
-            <div className="tile"><b className="neg">{pct(st.max_drawdown)}</b><span>max drawdown</span></div>
-            <div className="tile"><b className={st.oos_sharpe >= 0 ? 'pos' : 'neg'}>{num(st.oos_sharpe)}</b><span>out-of-sample</span></div>
+            <div className="tile"><span>Sharpe</span><b>{num(st.sharpe)}</b></div>
+            <div className="tile"><span>Max drawdown</span><b className="neg">{pct(st.max_drawdown)}</b></div>
+            <div className="tile"><span>Unseen-data Sharpe</span><b className={st.oos_sharpe >= 0 ? 'pos' : 'neg'}>{num(st.oos_sharpe)}</b></div>
           </div>
           <p className="hint">{c.fee.bps} bps per swap to <code>{s.account}</code> · {s.followers.length} vault agent{s.followers.length === 1 ? '' : 's'} following · {s.signals.length} signals on-chain</p>
         </section>;

@@ -2,10 +2,10 @@
 import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { backtest, checkGates, FUNCTIONS, num, pct } from '@/lib/alpha';
+import { backtest, FUNCTIONS } from '@/lib/alpha';
 import { asset } from '@/lib/config';
-import { Chart } from '@/components/Chart';
-import { AIBuilder } from '@/components/AIBuilder';
+import { LabResult as Result } from '@/components/LabResult';
+import { AIBuilder, type Meta } from '@/components/AIBuilder';
 
 const IDEAS: { name: string; expr: string; hint: string }[] = [
   { name: 'Buy the dip', expr: '-ts_delta(close, 3) / delay(close, 3)', hint: 'Buy what fell most in the last 3 days.' },
@@ -21,21 +21,20 @@ function Inner() {
   const [r, setR] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
   const [extra, setExtra] = useState<Record<string, unknown>>({});
+  const [meta, setMeta] = useState<Meta | null>(null);
+  const [copied, setCopied] = useState(false);
   useEffect(() => { fetch(asset('/data/prices.json')).then((x) => x.json()).then(setPrices); }, []);
   const run = useCallback((e?: string, more: Record<string, unknown> = extra) => {
     if (!prices) return;
     setErr(null);
     try { setR(backtest(e ?? expr, prices, { top_n: 3, cash_if_negative: true, fee_bps: 35, max_weight: 1, universe: Object.keys(prices.tokens), ...more })); } catch (x) { setErr((x as Error).message); setR(null); }
   }, [expr, prices, extra]);
-  const applyAI = (formula: string, settings: Record<string, unknown>) => {
-    setExpr(formula); setExtra(settings); run(formula, settings);
+  const applyAI = (formula: string, settings: Record<string, unknown>, m: Meta) => {
+    setExpr(formula); setExtra(settings); setMeta(m); run(formula, settings);
     setTimeout(() => document.getElementById('result')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
   useEffect(() => { if (prices) run(); }, [prices]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const s = r?.stats, o = r?.out_of_sample;
-  const end = r ? r.daily.at(-1) : null;
-  const w: Record<string, number> = r?.latest_signal?.weights ?? {};
   return <>
     <div className="hero" style={{ paddingTop: 8 }}>
       <div className="eyebrow">Lab · for researchers</div>
@@ -45,25 +44,12 @@ function Inner() {
     <AIBuilder onUse={applyAI} />
     <h2 style={{ margin: '24px 0 10px' }}>Or write your own formula</h2>
     <section className="card">
-      <div className="row" style={{ marginBottom: 10 }}>{IDEAS.map((i) => <button key={i.name} className="ghost" title={i.hint} onClick={() => { setExpr(i.expr); setExtra({}); run(i.expr, {}); }}>{i.name}</button>)}</div>
+      <div className="row" style={{ marginBottom: 10 }}>{IDEAS.map((i) => <button key={i.name} className="ghost" title={i.hint} onClick={() => { setExpr(i.expr); setExtra({}); setMeta(null); run(i.expr, {}); }}>{i.name}</button>)}</div>
       <textarea rows={2} value={expr} onChange={(e) => setExpr(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) run(); }} aria-label="Formula" />
-      <div className="row" style={{ marginTop: 10 }}><button onClick={() => run()} disabled={!prices}>{prices ? 'Run backtest' : 'Loading prices…'}</button><span className="hint">Holds the top {String((extra.top_n as number) ?? 3)} tokens by your score each day, USDC when none scores above zero. 35 bps cost per trade.</span></div>
+      <div className="row" style={{ marginTop: 10 }}><button onClick={() => { setMeta(null); run(); }} disabled={!prices}>{prices ? 'Run backtest' : 'Loading prices…'}</button><span className="hint">Holds the top {String((extra.top_n as number) ?? 3)} coins by your score each day, USDC when none scores above zero. 35 bps cost per trade.</span></div>
       {err && <div className="toast bad">{err}</div>}
     </section>
-    {r && <section className="card" id="result">
-      <h2>{end ? `$100 became $${(end.equity * 100).toFixed(0)}. Holding NEAR: $${(end.bench * 100).toFixed(0)}.` : 'Result'}</h2>
-      <div className="tiles">
-        <div className="tile"><b>{num(s.sharpe)}</b><span>Sharpe (return per unit of risk)</span></div>
-        <div className="tile"><b className="neg">{pct(s.max_drawdown)}</b><span>worst drop from a peak</span></div>
-        <div className="tile"><b className={o.sharpe >= 0 ? 'pos' : 'neg'}>{num(o.sharpe)}</b><span>Sharpe on the unseen last 30%</span></div>
-        <div className="tile"><b>{pct(s.turnover)}</b><span>traded per day</span></div>
-      </div>
-      <div style={{ marginTop: 14 }}><Chart split={r.daily[Math.floor(r.daily.length * 0.7)]?.date} series={[
-        { label: 'hold NEAR', color: 'var(--muted)', width: 1.5, points: r.daily.map((d: any) => [d.date, d.bench]) },
-        { label: 'your idea', color: 'var(--accent)', points: r.daily.map((d: any) => [d.date, d.equity]) }]} /></div>
-      <div className="row" style={{ marginTop: 10 }}>{checkGates(r).map((g) => <span key={g.label} className={`pill ${g.pass ? 'ok' : 'bad'}`}>{g.pass ? '✓' : '✗'} {g.label}</span>)}</div>
-      <p className="hint">Tomorrow's target from the {r.latest_signal.date} close: {Object.keys(w).length ? Object.entries(w).map(([k, v]) => `${k} ${(v * 100).toFixed(0)}%`).join(', ') : '100% USDC'}. Pass every gate to list it; publishing is one <code>publish_mandate</code> call to <code>top-notch.near</code> from your account. See the <Link href="/strategies/">live strategies</Link>.</p>
-    </section>}
+    {r && <Result r={r} meta={meta} expr={expr} copied={copied} onCopy={() => { navigator.clipboard?.writeText(`${location.origin}${location.pathname}?e=${encodeURIComponent(expr)}`); setCopied(true); setTimeout(() => setCopied(false), 1500); }} />}
     <section className="card"><h2>Functions</h2><p className="hint" style={{ marginTop: 0 }}>Fields: <code>close</code>, <code>volume</code>, <code>returns</code>. Operators: <code>+ - * / &gt; &lt;</code>.</p>
       <div className="tbl"><table><tbody>{Object.entries(FUNCTIONS).map(([k, f]) => <tr key={k}><td><code>{k}</code></td><td className="hint">{f.doc}</td></tr>)}</tbody></table></div></section>
   </>;

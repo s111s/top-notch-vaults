@@ -6,9 +6,12 @@ import { STYLES, FILTERS, comboKey, generate } from '../lib/aiBuilder.js';
 
 const OUT = new URL('../public/data/ai-library.json', import.meta.url);
 const lib = fs.existsSync(OUT) ? JSON.parse(fs.readFileSync(OUT, 'utf8')) : {};
-const subsets = (arr) => arr.reduce((acc, x) => acc.concat(acc.map((s) => [...s, x])), [[]]);
-const jobs = STYLES.flatMap((s) => subsets(FILTERS.map((f) => f.id)).map((fs_) => [s.id, fs_]))
-  .filter(([s, f]) => !lib[comboKey(s, f)] || process.argv.includes('--all'));
+// Library = every core style alone and with each single skill, at the medium horizon. Bigger combos,
+// other horizons and personal notes are built fresh through the relay.
+const all = STYLES.flatMap((s) => [[s.id, []], ...FILTERS.map((f) => [s.id, [f.id]])]);
+const keep = new Set(all.map(([s, f]) => comboKey(s, f)));
+for (const k of Object.keys(lib)) if (!keep.has(k)) delete lib[k]; // drop combos no longer offered
+const jobs = all.filter(([s, f]) => !lib[comboKey(s, f)] || process.argv.includes('--all'));
 console.log(`${jobs.length} combos to generate`);
 const only = process.argv[2] && !process.argv[2].startsWith('--') ? Number(process.argv[2]) : jobs.length;
 const queue = jobs.slice(0, only);
@@ -23,5 +26,5 @@ async function worker() {
     } catch (e) { console.log(`${comboKey(s, f)} FAILED ${e.message}`); }
   }
 }
-await Promise.all([worker(), worker(), worker(), worker()]);
+await Promise.all([worker(), worker(), worker(), worker(), worker(), worker()]);
 console.log(`library: ${Object.keys(lib).length} strategies`);

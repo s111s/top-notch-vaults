@@ -8,4 +8,4 @@ Source: `src/index.js` (imports `../../lib/aiBuilder.js`). Build the single-file
 `npx esbuild worker/src/index.js --bundle --format=esm --platform=neutral --target=es2022 --outfile=worker/dist/top-notch-ai.js`.
 
 Deploy: paste `dist/top-notch-ai.js` into a Cloudflare Worker, add the secret `NEAR_AI_API_KEY`, and bind a KV namespace as `USAGE`.
-Endpoints: `GET /health`, `POST /quota {auth}`, `POST /generate {auth, style, filters, tier, payTx?}`.
+Endpoints: `GET /health`, `POST /quota {auth}`, `POST /generate {auth, style, filters, horizon?, note?, tier, payTx?}` (options checked by `validateOptions` in lib/aiBuilder.js; `/health` reports `version: 2`).

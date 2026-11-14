@@ -1,4 +1,5 @@
 'use client';
+import { Stat } from '@/components/LabResult';
 import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -32,12 +33,12 @@ function Inner() {
     <section className="card">
       <h2>Backtest ({c.data.from} → {c.data.to}, {st.days} days, fees included)</h2>
       <div className="tiles">
-        <div className="tile"><b>{num(st.sharpe)}</b><span>Sharpe</span></div>
-        <div className="tile"><b>{num(st.fitness)}</b><span>Fitness</span></div>
-        <div className="tile"><b className="neg">{pct(st.max_drawdown)}</b><span>Max drawdown</span></div>
-        <div className="tile"><b>{pct(st.turnover)}</b><span>Turnover / day</span></div>
-        <div className="tile"><b className={st.total_return >= 0 ? 'pos' : 'neg'}>{pct(st.total_return, 0)}</b><span>Total return</span></div>
-        <div className="tile"><b className={st.oos_sharpe >= 0 ? 'pos' : 'neg'}>{num(st.oos_sharpe)}</b><span>Out-of-sample Sharpe</span></div>
+        <Stat k="Sharpe ratio" v={num(st.sharpe)} m="Return per unit of risk. Above 1 is good." />
+        <Stat k="Fitness" v={num(st.fitness)} m="Sharpe adjusted for returns and trading cost." />
+        <Stat k="Max drawdown" v={pct(st.max_drawdown)} cls="neg" m="The worst fall from a peak." />
+        <Stat k="Turnover" v={pct(st.turnover)} m="Share of the money traded per day." />
+        <Stat k="Total return" v={pct(st.total_return, 0)} cls={st.total_return >= 0 ? 'pos' : 'neg'} m="Over the whole backtest, after fees." />
+        <Stat k="Unseen-data Sharpe" v={num(st.oos_sharpe)} cls={st.oos_sharpe >= 0 ? 'pos' : 'neg'} m="On the last 30% of days. The most honest test." />
       </div>
       {curve && <div style={{ marginTop: 14 }}><Chart split={curve.split_at} series={[
         { label: 'hold NEAR', color: 'var(--muted)', width: 1.5, points: curve.points.map((p: any) => [p[0], p[2]]) },

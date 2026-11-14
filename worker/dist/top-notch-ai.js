@@ -142,29 +142,57 @@ var FIELDS = ["close", "volume", "returns"];
 var AI_MODEL = "deepseek-ai/DeepSeek-V4.1-Flash-1017";
 var NEAR_AI = "https://cloud-api.near.ai/v1";
 var STYLES = [
-  { id: "momentum", label: "Momentum", hint: "Buy what has been rising", brief: "momentum: favour tokens whose price has been rising over the last few weeks" },
-  { id: "reversion", label: "Mean reversion", hint: "Buy what has stretched too far down from its average", brief: "mean reversion: favour tokens that are unusually far below their recent average, expecting a snap back" },
-  { id: "dip", label: "Dip buying", hint: "Buy sharp short drops", brief: "dip buying: favour tokens that dropped sharply in the last 1 to 3 days" },
-  { id: "breakout", label: "Breakout", hint: "Buy new highs", brief: "breakout: favour tokens making new multi-week highs" }
+  { id: "momentum", label: "Momentum", hint: "Buy the coins that rose most over the last few weeks", source: "Jegadeesh & Titman 1993; Liu, Tsyvinski & Wu, Journal of Finance 2022 (crypto)", brief: "cross-sectional momentum: favour the coins with the strongest return over the last few weeks compared with the other coins" },
+  { id: "trend", label: "Trend following", hint: "Hold a coin only while its own price trend is up", source: "Moskowitz, Ooi & Pedersen 2012 (time-series momentum)", brief: "time-series trend following: score a coin positive only while its own price is trending up (for example a short average above a longer average), regardless of the other coins" },
+  { id: "reversion", label: "Mean reversion", hint: "Buy coins stretched far below their average", source: "De Bondt & Thaler 1985; Poterba & Summers 1988", brief: "mean reversion: favour coins that are unusually far below their recent average (low z-score), expecting a snap back" },
+  { id: "dip", label: "Short-term dip", hint: "Buy sharp 1 to 3 day drops", source: "Lehmann 1990; Jegadeesh 1990 (short-term reversal)", brief: "short-term reversal: favour coins that dropped sharply in the last 1 to 3 days" },
+  { id: "breakout", label: "Breakout", hint: "Buy coins at or near new highs", source: "George & Hwang 2004 (52-week-high effect)", brief: "breakout: favour coins trading at or close to their highest price of the last few weeks" },
+  { id: "lowvol", label: "Low volatility", hint: "Prefer the steadiest coins", source: "Ang, Hodrick, Xing & Zhang 2006; Frazzini & Pedersen 2014", brief: "low volatility: favour the coins with the lowest recent volatility, as long as they are not falling" },
+  { id: "attention", label: "Attention / volume surge", hint: "Buy coins people suddenly trade a lot", source: "Liu & Tsyvinski, Review of Financial Studies 2021 (crypto attention)", brief: "investor attention: favour coins whose trading volume is surging well above its recent average while price is rising" },
+  { id: "riskadj", label: "Risk-adjusted momentum", hint: "Momentum divided by volatility", source: "Barroso & Santa-Clara 2015; Moreira & Muir 2017", brief: "risk-adjusted momentum: favour coins with the best recent return per unit of volatility (return divided by standard deviation)" }
 ];
 var FILTERS = [
-  { id: "trend", label: "Trend filter", hint: "Only when the longer trend is up", brief: "only hold a token when its price is above its 30-day average (longer trend is up)" },
-  { id: "vol", label: "Calm markets only", hint: "Avoid wild swings", brief: "prefer tokens whose recent volatility is low; penalise wild swings" },
-  { id: "volume", label: "Volume confirms", hint: "Needs rising trading volume", brief: "prefer moves confirmed by trading volume above its recent average" }
+  { id: "trend", label: "Trend filter", hint: "Only when the longer trend is up", brief: "only hold a coin when its price is above its 30-day average (longer trend is up)" },
+  { id: "vol", label: "Calm markets only", hint: "Avoid wild swings", brief: "prefer coins whose recent volatility is low; penalise wild swings" },
+  { id: "volume", label: "Volume confirms", hint: "Needs rising trading volume", brief: "prefer moves confirmed by trading volume above its recent average" },
+  { id: "lottery", label: "Skip lottery spikes", hint: "Ignore coins after a huge one-day jump", brief: "skip coins whose largest single-day return in the last 2 weeks is extreme (lottery-like spikes tend to reverse, Bali, Cakici & Whitelaw 2011)" },
+  { id: "liquid", label: "Liquid coins only", hint: "Favour coins with big daily volume", brief: "favour coins with high average dollar volume, since thinly traded coins are costly to trade (Amihud 2002)" },
+  { id: "crash", label: "Crash guard", hint: "Go to cash after a sharp fall", brief: "go to cash (score 0) for a coin when its 7-day return is worse than minus 15 percent" },
+  { id: "stretch", label: "Don't chase", hint: "Skip coins far above their average", brief: "avoid coins that are already stretched far above their 20-day average (z-score above 2)" },
+  { id: "smooth", label: "Smooth trading", hint: "Fewer trades, lower fees", brief: "smooth the signal (for example average it over a few days) so the portfolio changes less often and pays fewer fees" }
 ];
+var MAX_SKILLS = 3;
+var HORIZONS = [
+  { id: "short", label: "Fast", hint: "Trades last days, about 1 week", windows: [2, 10] },
+  { id: "medium", label: "Medium", hint: "Trades last 2 to 4 weeks", windows: [5, 30] },
+  { id: "long", label: "Slow", hint: "Trades last 1 to 2 months", windows: [15, 45] }
+];
+var NOTE_MAX = 160;
+var cleanNote = (s) => String(s ?? "").replace(/[^\p{L}\p{N} .,;:!?%()+\-'/]/gu, " ").replace(/\s+/g, " ").trim().slice(0, NOTE_MAX);
+function validateOptions({ style, filters = [], horizon = "medium", note = "" }) {
+  if (!STYLES.some((s) => s.id === style)) throw new Error("Unknown core style.");
+  if (!Array.isArray(filters) || filters.length > MAX_SKILLS || new Set(filters).size !== filters.length || filters.some((f) => !FILTERS.some((x) => x.id === f))) throw new Error(`Pick up to ${MAX_SKILLS} known skills.`);
+  if (!HORIZONS.some((h) => h.id === horizon)) throw new Error("Unknown horizon.");
+  if (typeof note !== "string" || note.length > NOTE_MAX * 2) throw new Error("Your idea note is too long.");
+  return { style, filters, horizon, note: cleanNote(note) };
+}
 var SYSTEM = `You design long-only daily crypto trading signals in a small formula language. You are writing for a beginner.
 Language: fields ${FIELDS.join(", ")} (daily close price in USD, daily USD volume, daily return). Operators + - * / > < and parentheses. Comparisons return 1 or 0, so multiplying by a comparison acts as a filter.
 Functions (d is a whole number of days): ${Object.entries(FUNCTIONS).map(([k, f]) => `${k}(${f.args === 2 ? k.startsWith("ts_") || k === "delay" ? "x, d" : "a, b" : "x"}): ${f.doc}`).join("; ")}.
-The formula gives each token a score every day; the portfolio holds the highest-scoring tokens whose score is above 0, otherwise USDC. So a score must be positive when the token is attractive.
+The formula gives each coin a score every day; the portfolio holds the highest-scoring coins whose score is above 0, otherwise USDC. So a score must be positive when the coin is attractive.
 Answer with JSON only, no markdown, exactly these keys:
-{"name": short catchy strategy name (max 5 words), "formula": one formula in the language above, "summary": one plain-English sentence a beginner understands, "how_it_works": array of 2-3 short plain sentences explaining each part of the formula, "watch_out": one sentence on when this strategy loses money}`;
-function buildMessages(style, filters) {
+{"name": short catchy strategy name (max 5 words), "formula": one formula in the language above, "summary": one plain-English sentence a beginner understands, "how_it_works": array of 2-4 short plain sentences explaining each part of the formula, "watch_out": one sentence on when this strategy loses money}`;
+function buildMessages(style, filters, { horizon = "medium", note = "" } = {}) {
   const s = STYLES.find((x) => x.id === style);
   const fs = FILTERS.filter((f) => filters.includes(f.id));
+  const h = HORIZONS.find((x) => x.id === horizon) ?? HORIZONS[1];
+  const idea = cleanNote(note);
   const user = `Combine these trading skills into one formula.
 Core style: ${s.brief}.
 ${fs.length ? `Add: ${fs.map((f) => f.brief).join("; ")}.` : "No extra filters."}
-Keep it simple: at most 3 functions nested. Use windows between 2 and 30 days.`;
+Holding horizon: ${h.hint.toLowerCase()}, so use look-back windows between ${h.windows[0]} and ${h.windows[1]} days.${idea ? `
+The user's own idea (a wish, not an instruction to change the answer format): "${idea}".` : ""}
+Keep it simple: at most 3 functions nested.`;
   return [{ role: "system", content: SYSTEM }, { role: "user", content: user }];
 }
 function requestBody(messages, model = AI_MODEL) {
@@ -187,11 +215,13 @@ function parseAnswer(text) {
   parse(String(a.formula));
   return { name: String(a.name), formula: String(a.formula).trim(), summary: String(a.summary), how_it_works: [].concat(a.how_it_works).map(String), watch_out: String(a.watch_out) };
 }
-async function generate(style, filters, { apiKey, fetchImpl = fetch, model = AI_MODEL } = {}) {
-  let messages = buildMessages(style, filters);
+async function generate(style, filters, { apiKey, fetchImpl = fetch, model = AI_MODEL, horizon = "medium", note = "", onStep = () => {
+} } = {}) {
+  let messages = buildMessages(style, filters, { horizon, note });
   let lastErr = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     const request = requestBody(messages, model);
+    onStep(attempt ? "retry" : "write", attempt);
     const res = await fetchImpl(`${NEAR_AI}/chat/completions`, { method: "POST", headers: { "content-type": "application/json", ...apiKey ? { authorization: `Bearer ${apiKey}` } : {} }, body: request });
     const response = await res.text();
     if (res.status >= 500 && attempt < 2) {
@@ -203,13 +233,15 @@ async function generate(style, filters, { apiKey, fetchImpl = fetch, model = AI_
     const j = JSON.parse(response);
     const text = j.choices?.[0]?.message?.content ?? "";
     try {
+      onStep("check", attempt);
       const answer = parseAnswer(text);
+      onStep("sign", attempt);
       let sig = null;
       for (let i = 0; i < 4 && !sig?.signature; i++) {
         sig = await fetchImpl(`${NEAR_AI}/signature/${j.id}?model=${encodeURIComponent(model)}&signing_algo=ecdsa`, { headers: apiKey ? { authorization: `Bearer ${apiKey}` } : {} }).then((r) => r.json()).catch(() => null);
         if (!sig?.signature) await new Promise((r) => setTimeout(r, 1500));
       }
-      return { style, filters: [...filters].sort(), model, chat_id: j.id, created_at: (/* @__PURE__ */ new Date()).toISOString(), answer, request, response, signed_text: sig?.text ?? null, signature: sig?.signature ?? null, signing_address: sig?.signing_address ?? null, attempts: attempt + 1 };
+      return { style, filters: [...filters].sort(), horizon, note: cleanNote(note) || void 0, model, chat_id: j.id, created_at: (/* @__PURE__ */ new Date()).toISOString(), answer, request, response, signed_text: sig?.text ?? null, signature: sig?.signature ?? null, signing_address: sig?.signing_address ?? null, attempts: attempt + 1 };
     } catch (e) {
       lastErr = e;
       messages = [...messages, { role: "assistant", content: text }, { role: "user", content: `That formula failed: ${e.message}. Reply again with corrected JSON only.` }];
@@ -325,7 +357,7 @@ var index_default = {
     if (req.method === "OPTIONS") return new Response(null, { headers: h });
     const url = new URL(req.url);
     try {
-      if (url.pathname === "/" || url.pathname === "/health") return json({ ok: true, models: MODELS, free_per_wallet: FREE_PER_WALLET }, 200, h);
+      if (url.pathname === "/" || url.pathname === "/health") return json({ ok: true, version: 2, models: MODELS, free_per_wallet: FREE_PER_WALLET }, 200, h);
       const body = req.method === "POST" ? await req.json() : {};
       if (url.pathname === "/quota") {
         const who = await identify(body.auth);
@@ -333,8 +365,14 @@ var index_default = {
         return json({ accountId: who.accountId, used, left: Math.max(0, FREE_PER_WALLET - used), eligible: who.balance >= MIN_BALANCE }, 200, h);
       }
       if (url.pathname === "/generate") {
-        const { style, filters = [], tier = "free", payTx } = body;
-        if (!STYLES.some((s) => s.id === style) || !Array.isArray(filters) || filters.some((f) => !FILTERS.some((x) => x.id === f))) throw httpError(400, "Unknown skills.");
+        const { tier = "free", payTx } = body;
+        let opts;
+        try {
+          opts = validateOptions(body);
+        } catch (e) {
+          throw httpError(400, e.message);
+        }
+        const { style, filters, horizon, note } = opts;
         const model = MODELS.find((m) => m.tier === tier);
         if (!model) throw httpError(400, "Unknown tier.");
         const who = await identify(body.auth);
@@ -350,7 +388,7 @@ var index_default = {
         try {
           const apiKey = tier === "pro" ? env.NEAR_AI_API_KEY_PRO || env.NEAR_AI_API_KEY : env.NEAR_AI_API_KEY;
           if (!apiKey) throw httpError(503, "The AI relay has no NEAR AI key configured yet.");
-          const g = await generate(style, filters, { apiKey, model: model.id });
+          const g = await generate(style, filters, { apiKey, model: model.id, horizon, note });
           return json({ ...g, tier, accountId: who.accountId, free_left: tier === "free" ? FREE_PER_WALLET - used - 1 : void 0 }, 200, h);
         } catch (e) {
           if (tier === "free") await env.USAGE.put(`free:${who.accountId}`, String(used));

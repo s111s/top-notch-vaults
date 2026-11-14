@@ -4,7 +4,7 @@
 //              NEP-413 signed message) gets FREE_PER_WALLET generations on the TEE model;
 //   pro tier:  any wallet that paid 0.01 NEAR to top-notch.near in a transaction we haven't seen before.
 // Bindings: secret NEAR_AI_API_KEY (free tier), optional secret NEAR_AI_API_KEY_PRO (paid tier), KV namespace USAGE. Optional var ALLOWED_ORIGINS (comma separated).
-import { generate, MODELS, STYLES, FILTERS, FREE_PER_WALLET, PRO_PRICE_YOCTO, PAY_TO, AUTH_RECIPIENT, authMessage } from '../../lib/aiBuilder.js';
+import { generate, validateOptions, MODELS, FREE_PER_WALLET, PRO_PRICE_YOCTO, PAY_TO, AUTH_RECIPIENT, authMessage } from '../../lib/aiBuilder.js';
 
 const RPCS = ['https://rpc.mainnet.fastnear.com', 'https://rpc.mainnet.near.org'];
 const MIN_BALANCE = 10n ** 23n; // 0.1 NEAR
@@ -83,7 +83,7 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { headers: h });
     const url = new URL(req.url);
     try {
-      if (url.pathname === '/' || url.pathname === '/health') return json({ ok: true, models: MODELS, free_per_wallet: FREE_PER_WALLET }, 200, h);
+      if (url.pathname === '/' || url.pathname === '/health') return json({ ok: true, version: 2, models: MODELS, free_per_wallet: FREE_PER_WALLET }, 200, h);
       const body = req.method === 'POST' ? await req.json() : {};
       if (url.pathname === '/quota') {
         const who = await identify(body.auth);
@@ -91,8 +91,10 @@ export default {
         return json({ accountId: who.accountId, used, left: Math.max(0, FREE_PER_WALLET - used), eligible: who.balance >= MIN_BALANCE }, 200, h);
       }
       if (url.pathname === '/generate') {
-        const { style, filters = [], tier = 'free', payTx } = body;
-        if (!STYLES.some((s) => s.id === style) || !Array.isArray(filters) || filters.some((f) => !FILTERS.some((x) => x.id === f))) throw httpError(400, 'Unknown skills.');
+        const { tier = 'free', payTx } = body;
+        let opts;
+        try { opts = validateOptions(body); } catch (e) { throw httpError(400, e.message); }
+        const { style, filters, horizon, note } = opts;
         const model = MODELS.find((m) => m.tier === tier);
         if (!model) throw httpError(400, 'Unknown tier.');
         const who = await identify(body.auth);
@@ -108,7 +110,7 @@ export default {
         try {
           const apiKey = tier === 'pro' ? (env.NEAR_AI_API_KEY_PRO || env.NEAR_AI_API_KEY) : env.NEAR_AI_API_KEY;
           if (!apiKey) throw httpError(503, 'The AI relay has no NEAR AI key configured yet.');
-          const g = await generate(style, filters, { apiKey, model: model.id });
+          const g = await generate(style, filters, { apiKey, model: model.id, horizon, note });
           return json({ ...g, tier, accountId: who.accountId, free_left: tier === 'free' ? FREE_PER_WALLET - used - 1 : undefined }, 200, h);
         } catch (e) {
           if (tier === 'free') await env.USAGE.put(`free:${who.accountId}`, String(used)); // refund a failed attempt
