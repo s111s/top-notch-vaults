@@ -1,0 +1,29 @@
+{
+  "name": "top-notch-vaults",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Run a proven trading strategy from a NEAR vault only you can withdraw from. An AI agent trades it through NEAR Intents; NEAR AI Cloud signs what it did.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "typecheck": "tsc --noEmit",
+    "contract:test": "cd contract && cargo test"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@defuse-protocol/one-click-sdk-typescript": "^0.1.26",
+    "@hot-labs/near-connect": "^0.12.0",
+    "near-api-js": "^7.5.3",
+    "next": "^15.5.29",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "viem": "^2.57.19"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^5.9.3"
+  },
+  "type": "module"
+}

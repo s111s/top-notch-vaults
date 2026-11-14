@@ -1,0 +1,7 @@
+{
+  "name": "top-notch-agent",
+  "private": true,
+  "type": "module",
+  "description": "The managed vault agent, the researcher signal publisher and the auditors. Runs once a day after the candle closes.",
+  "dependencies": { "near-api-js": "^5.1.1", "@near-js/crypto": "^2.5.1", "bs58": "^6.0.0" }
+}

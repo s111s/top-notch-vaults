@@ -1,0 +1,39 @@
+# The managed agent's daily run: signals, vault rebalance through 1Click, signed note, audits.
+# Manual for now so it never runs alongside the original repo's schedule. To make it daily, add
+#   schedule: [{ cron: '20 0 * * *' }]
+# Needs repository secrets: PLATFORM_KEY, RESEARCHER_KEY, AGENT_KEY (key JSON files),
+# STRATEGIES_PRIVATE (hidden strategy logic), NEAR_AI_API_KEY.
+name: daily-agent
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci --prefix agent
+      - name: Keys from secrets
+        run: |
+          mkdir -p "$RUNNER_TEMP/keys"
+          echo '${{ secrets.PLATFORM_KEY }}' > "$RUNNER_TEMP/keys/top-notch.json"
+          echo '${{ secrets.RESEARCHER_KEY }}' > "$RUNNER_TEMP/keys/researcher-1.json"
+          echo '${{ secrets.AGENT_KEY }}' > "$RUNNER_TEMP/keys/alpha-bot-demo.json"
+          echo '${{ secrets.STRATEGIES_PRIVATE }}' > "$RUNNER_TEMP/keys/strategies-private.json"
+      - run: agent/daily.sh
+        env:
+          TN_KEY_DIR: ${{ runner.temp }}/keys
+          NEAR_AI_API_KEY: ${{ secrets.NEAR_AI_API_KEY }}
+      - name: Commit the day's data (the deploy workflow publishes it)
+        run: |
+          git config user.name "top-notch-bot"
+          git config user.email "top-notch-bot@users.noreply.github.com"
+          git add public/data
+          git commit -m "Daily run $(date -u +%F)" || exit 0
+          git push
+          gh workflow run deploy.yml
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -1,0 +1,10 @@
+export const FUNCTIONS: Record<string, { args: number; doc: string }>;
+export const FIELDS: string[];
+export const GATES: { label: string; test: (s: any, r: any) => boolean }[];
+export function backtest(expression: string, prices: any, settings?: any, opts?: any): any;
+export function checkGates(r: any): { label: string; pass: boolean }[];
+export function pct(x: number | null | undefined, d?: number): string;
+export function num(x: number | null | undefined, d?: number): string;
+export function canonical(v: unknown): string;
+export function sha256Hex(t: string): Promise<string>;
+export function logicCommit(e: string, s: any, salt: string): Promise<string>;

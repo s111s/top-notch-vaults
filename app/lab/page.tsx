@@ -1,0 +1,63 @@
+'use client';
+import Link from 'next/link';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { backtest, checkGates, FUNCTIONS, num, pct } from '@/lib/alpha';
+import { asset } from '@/lib/config';
+import { Chart } from '@/components/Chart';
+
+const IDEAS: { name: string; expr: string; hint: string }[] = [
+  { name: 'Buy the dip', expr: '-ts_delta(close, 3) / delay(close, 3)', hint: 'Buy what fell most in the last 3 days.' },
+  { name: 'Ride the trend', expr: 'ts_mean(close, 5) / ts_mean(close, 20) - 1', hint: 'Hold coins whose 5-day average is above their 20-day average.' },
+  { name: 'Steady winners', expr: 'ts_mean(returns, 21) / ts_std(returns, 21)', hint: 'Gains per unit of risk over the last month.' },
+  { name: 'Top of the class', expr: 'rank(ts_mean(returns, 14)) - 0.5', hint: 'Hold the coins in the top half by two-week return.' },
+];
+
+function Inner() {
+  const q = useSearchParams();
+  const [expr, setExpr] = useState(q.get('e') || IDEAS[1].expr);
+  const [prices, setPrices] = useState<any>(null);
+  const [r, setR] = useState<any>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => { fetch(asset('/data/prices.json')).then((x) => x.json()).then(setPrices); }, []);
+  const run = useCallback((e?: string) => {
+    if (!prices) return;
+    setErr(null);
+    try { setR(backtest(e ?? expr, prices, { top_n: 3, cash_if_negative: true, fee_bps: 35, max_weight: 1, universe: Object.keys(prices.tokens) })); } catch (x) { setErr((x as Error).message); setR(null); }
+  }, [expr, prices]);
+  useEffect(() => { if (prices) run(); }, [prices]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const s = r?.stats, o = r?.out_of_sample;
+  const end = r ? r.daily.at(-1) : null;
+  const w: Record<string, number> = r?.latest_signal?.weights ?? {};
+  return <>
+    <div className="hero" style={{ paddingTop: 8 }}>
+      <div className="eyebrow">Lab · for researchers</div>
+      <h1 style={{ fontSize: 32 }}>Test a trading idea in seconds.</h1>
+      <p className="lead" style={{ fontSize: 16 }}>Write a formula and backtest it on six months of NEAR Intents prices, all in your browser. Good ones can be published as strategies that vaults follow, paying you on every swap.</p>
+    </div>
+    <section className="card">
+      <div className="row" style={{ marginBottom: 10 }}>{IDEAS.map((i) => <button key={i.name} className="ghost" title={i.hint} onClick={() => { setExpr(i.expr); run(i.expr); }}>{i.name}</button>)}</div>
+      <textarea rows={2} value={expr} onChange={(e) => setExpr(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) run(); }} aria-label="Formula" />
+      <div className="row" style={{ marginTop: 10 }}><button onClick={() => run()} disabled={!prices}>{prices ? 'Run backtest' : 'Loading prices…'}</button><span className="hint">Holds the top 3 tokens by your score each day, USDC when none scores above zero. 35 bps cost per trade.</span></div>
+      {err && <div className="toast bad">{err}</div>}
+    </section>
+    {r && <section className="card">
+      <h2>{end ? `$100 became $${(end.equity * 100).toFixed(0)}. Holding NEAR: $${(end.bench * 100).toFixed(0)}.` : 'Result'}</h2>
+      <div className="tiles">
+        <div className="tile"><b>{num(s.sharpe)}</b><span>Sharpe (return per unit of risk)</span></div>
+        <div className="tile"><b className="neg">{pct(s.max_drawdown)}</b><span>worst drop from a peak</span></div>
+        <div className="tile"><b className={o.sharpe >= 0 ? 'pos' : 'neg'}>{num(o.sharpe)}</b><span>Sharpe on the unseen last 30%</span></div>
+        <div className="tile"><b>{pct(s.turnover)}</b><span>traded per day</span></div>
+      </div>
+      <div style={{ marginTop: 14 }}><Chart split={r.daily[Math.floor(r.daily.length * 0.7)]?.date} series={[
+        { label: 'hold NEAR', color: 'var(--muted)', width: 1.5, points: r.daily.map((d: any) => [d.date, d.bench]) },
+        { label: 'your idea', color: 'var(--accent)', points: r.daily.map((d: any) => [d.date, d.equity]) }]} /></div>
+      <div className="row" style={{ marginTop: 10 }}>{checkGates(r).map((g) => <span key={g.label} className={`pill ${g.pass ? 'ok' : 'bad'}`}>{g.pass ? '✓' : '✗'} {g.label}</span>)}</div>
+      <p className="hint">Tomorrow's target from the {r.latest_signal.date} close: {Object.keys(w).length ? Object.entries(w).map(([k, v]) => `${k} ${(v * 100).toFixed(0)}%`).join(', ') : '100% USDC'}. Pass every gate to list it; publishing is one <code>publish_mandate</code> call to <code>top-notch.near</code> from your account. See the <Link href="/strategies/">live strategies</Link>.</p>
+    </section>}
+    <section className="card"><h2>Functions</h2><p className="hint" style={{ marginTop: 0 }}>Fields: <code>close</code>, <code>volume</code>, <code>returns</code>. Operators: <code>+ - * / &gt; &lt;</code>.</p>
+      <div className="tbl"><table><tbody>{Object.entries(FUNCTIONS).map(([k, f]) => <tr key={k}><td><code>{k}</code></td><td className="hint">{f.doc}</td></tr>)}</tbody></table></div></section>
+  </>;
+}
+export default function LabPage() { return <Suspense fallback={null}><Inner /></Suspense>; }
