@@ -88,6 +88,18 @@ The agent (`agent/`, Node, its own `package.json`) needs the account keys, which
 
 Every agent swap pays the researcher 20 bps and the platform 10 bps inside the 1Click swap. No custody, no pooled fund, no invoices. AI strategy building is pay-as-you-go: the signed library is free, fresh generations are paid per call (today with your own NEAR AI key; next, a few free per wallet and then a small NEAR fee per generation). Later: a monthly fee for managed agents and paid strategy certification.
 
+### AI cost per user (measured Nov 14 on our Build with AI prompt, NEAR AI Cloud list prices)
+
+| Model | Runs in NEAR AI's TEE | Cost per generation | 5 free / user |
+|---|---|---|---|
+| DeepSeek V4.1 Flash (default) | yes, verifiable | $0.002 | $0.01 |
+| GLM-5.3 Flash | yes | $0.0005 | $0.003 |
+| Claude Haiku 5.5 | proxied | $0.001 | $0.005 |
+| Claude Sonnet 5.5 / GPT-6 Sol | proxied | ~$0.008 | $0.04 |
+| Claude Opus 5.5 | proxied | $0.014 | $0.07 |
+
+Plan: a free tier on the TEE model (5 generations per **activated** NEAR wallet: one NEP-413 signed message proves ownership, and the account must exist and hold at least 0.1 NEAR, so a fake wallet costs more than the free usage is worth), plus a paid "best quality" frontier option at about 0.01 NEAR per generation. It needs a small relay (one serverless function) that holds the platform's NEAR AI key and counts usage per wallet. Today: the signed library is free and fresh generations use your own key.
+
 ## Libraries and AI-generated code
 
 - App: `next`, `react`, `@hot-labs/near-connect`, `near-api-js`, `@defuse-protocol/one-click-sdk-typescript`, `viem` (ECDSA signature recovery). Contract: `near-sdk`. Agent: `near-api-js`, `@near-js/crypto`, `bs58`.
