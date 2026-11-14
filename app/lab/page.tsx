@@ -23,6 +23,8 @@ function Inner() {
   const [extra, setExtra] = useState<Record<string, unknown>>({});
   const [meta, setMeta] = useState<Meta | null>(null);
   const [copied, setCopied] = useState(false);
+  const [mode, setMode] = useState<'ai' | 'own' | null>(q.get('e') ? 'own' : null);
+  const pick = (m: 'ai' | 'own') => { setMode(m); setR(null); setErr(null); setMeta(null); if (m === 'own' && prices) run(expr, {}); };
   useEffect(() => { fetch(asset('/data/prices.json')).then((x) => x.json()).then(setPrices); }, []);
   const run = useCallback((e?: string, more: Record<string, unknown> = extra) => {
     if (!prices) return;
@@ -33,7 +35,7 @@ function Inner() {
     setExpr(formula); setExtra(settings); setMeta(m); run(formula, settings);
     setTimeout(() => document.getElementById('result')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
-  useEffect(() => { if (prices) run(); }, [prices]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (prices && mode === 'own') run(); }, [prices]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <>
     <div className="hero" style={{ paddingTop: 8 }}>
@@ -41,17 +43,26 @@ function Inner() {
       <h1 style={{ fontSize: 32 }}>Build a strategy with NEAR AI and see what it would have earned.</h1>
       <p className="lead" style={{ fontSize: 16 }}>Pick research-backed skills and NEAR AI Cloud writes the strategy, or write your own formula. Either way it's backtested on six months of prices in your browser, after fees. Strategies that pass the quality checks can be listed for vaults to follow, paying you 20 bps on every swap.</p>
     </div>
-    <AIBuilder onUse={applyAI} />
-    <h2 style={{ margin: '24px 0 10px' }}>Or write your own formula</h2>
+    <div className="grid g2" style={{ gap: 12, marginBottom: 16 }} role="group" aria-label="How do you want to build?">
+      <button className={mode === 'ai' ? '' : 'ghost'} onClick={() => pick('ai')} style={{ display: 'block', textAlign: 'left', whiteSpace: 'normal', padding: 16 }}>
+        <div style={{ fontSize: 17 }}>✨ Build with AI</div><div style={{ fontWeight: 400, fontSize: 14, opacity: .85, marginTop: 4 }}>New to trading? Pick research-backed skills and NEAR AI Cloud writes and explains the strategy.</div></button>
+      <button className={mode === 'own' ? '' : 'ghost'} onClick={() => pick('own')} style={{ display: 'block', textAlign: 'left', whiteSpace: 'normal', padding: 16 }}>
+        <div style={{ fontSize: 17 }}>✍️ Write your own formula</div><div style={{ fontWeight: 400, fontSize: 14, opacity: .85, marginTop: 4 }}>For researchers: type a formula, or start from an example, and backtest it instantly.</div></button>
+    </div>
+    {!mode && <p className="hint" style={{ textAlign: 'center' }}>Choose one to start. Either way you can save the result as a strategy on NEAR.</p>}
+    {mode === 'ai' && <AIBuilder onUse={applyAI} />}
+    {mode === 'own' && <>
     <section className="card">
+      <h2 style={{ marginTop: 0 }}>Write your own formula</h2>
       <div className="row" style={{ marginBottom: 10 }}>{IDEAS.map((i) => <button key={i.name} className="ghost" title={i.hint} onClick={() => { setExpr(i.expr); setExtra({}); setMeta(null); run(i.expr, {}); }}>{i.name}</button>)}</div>
       <textarea rows={2} value={expr} onChange={(e) => setExpr(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) run(); }} aria-label="Formula" />
       <div className="row" style={{ marginTop: 10 }}><button onClick={() => { setMeta(null); run(); }} disabled={!prices}>{prices ? 'Run backtest' : 'Loading prices…'}</button><span className="hint">Holds the top {String((extra.top_n as number) ?? 3)} coins by your score each day, USDC when none scores above zero. 35 bps cost per trade.</span></div>
       {err && <div className="toast bad">{err}</div>}
     </section>
+    </>}
     {r && <Result r={r} meta={meta} expr={expr} copied={copied} onCopy={() => { navigator.clipboard?.writeText(`${location.origin}${location.pathname}?e=${encodeURIComponent(expr)}`); setCopied(true); setTimeout(() => setCopied(false), 1500); }} />}
-    <section className="card"><h2>Functions</h2><p className="hint" style={{ marginTop: 0 }}>Fields: <code>close</code>, <code>volume</code>, <code>returns</code>. Operators: <code>+ - * / &gt; &lt;</code>.</p>
-      <div className="tbl"><table><tbody>{Object.entries(FUNCTIONS).map(([k, f]) => <tr key={k}><td><code>{k}</code></td><td className="hint">{f.doc}</td></tr>)}</tbody></table></div></section>
+    {mode === 'own' && <section className="card"><h2>Functions</h2><p className="hint" style={{ marginTop: 0 }}>Fields: <code>close</code>, <code>volume</code>, <code>returns</code>. Operators: <code>+ - * / &gt; &lt;</code>.</p>
+      <div className="tbl"><table><tbody>{Object.entries(FUNCTIONS).map(([k, f]) => <tr key={k}><td><code>{k}</code></td><td className="hint">{f.doc}</td></tr>)}</tbody></table></div></section>}
   </>;
 }
 export default function LabPage() { return <Suspense fallback={null}><Inner /></Suspense>; }

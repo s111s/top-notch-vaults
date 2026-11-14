@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { checkGates, num, pct } from '@/lib/alpha';
 import { InteractiveChart } from '@/components/InteractiveChart';
 import type { Meta } from '@/components/AIBuilder';
+import { PublishStrategy } from '@/components/PublishStrategy';
 
 export function Stat({ k, v, m, cls }: { k: string; v: string; m: string; cls?: string }) {
   return <div className="stat"><span className="k">{k}</span><span className={`v ${cls ?? ''}`}>{v}</span><span className="m">{m}</span></div>;
 }
 
-export function LabResult({ r, meta, copied, onCopy }: { r: any; meta: Meta | null; expr: string; copied: boolean; onCopy: () => void }) {
+export function LabResult({ r, meta, expr, copied, onCopy }: { r: any; meta: Meta | null; expr: string; copied: boolean; onCopy: () => void }) {
   const s = r.stats, o = r.out_of_sample;
   const end = r.daily.at(-1);
   const syms: string[] = r.syms;
@@ -65,15 +66,16 @@ export function LabResult({ r, meta, copied, onCopy }: { r: any; meta: Meta | nu
 
     <section className="card" style={{ borderColor: 'var(--accent)' }}>
       <div className="eyebrow">What happens next</div>
-      <h2 style={{ margin: '4px 0 10px' }}>You have a formula. Here's how it becomes a working strategy.</h2>
+      <h2 style={{ margin: '4px 0 10px' }}>From formula to a strategy vaults follow, in 4 steps.</h2>
       <ol className="steps" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-        <li><h3>How it trades</h3><p className="hint">Once a day, after the 00:00 UTC close, the agent runs this formula on fresh NEAR Intents prices, picks the top {topN} coins and swaps to them through 1Click. When nothing scores above 0, it moves to USDC. No one picks trades by hand.</p></li>
-        <li><h3>Is it good enough?</h3><p className="hint">{passed ? 'It passes every quality check, so it can be listed.' : `It fails ${gates.filter((g) => !g.pass).length} of ${gates.length} quality checks, so it can't be listed yet. Try another style, skill or risk level.`} Trust the unseen-data Sharpe most: a strategy that only works on the days it was built on is luck.</p></li>
-        <li><h3>Publish it, earn on every swap</h3><p className="hint">A passing strategy is published to the <code>top-notch.near</code> registry with a <code>publish_mandate</code> call, logic public or hidden behind a hash, and audited. Every vault that follows it pays you 20 bps of each swap. Publishing from this page is next on our roadmap; see the <Link href="/strategies/">live strategies</Link> for what a listing looks like.</p></li>
-        <li><h3>Or invest with it</h3><p className="hint">Investors fund a <Link href="/vaults/">vault</Link> only they can withdraw from and point it at a listed strategy (one is live on mainnet today; self-serve vaults are next). The agent trades it daily and NEAR AI Cloud signs a note on what it did. Compare strategies on the <Link href="/leaderboard/">leaderboard</Link>.</p></li>
+        <li><h3>Save it as a strategy</h3><p className="hint">Below: name it, choose public or private logic, and sign one transaction. The card and these numbers go on the <code>top-notch.near</code> registry, timestamped so they can't be backdated.</p></li>
+        <li><h3>Publish its signal</h3><p className="hint">Once a day, after the 00:00 UTC close, the formula picks the top {topN} coins (or USDC). You publish that target with one click; automatic daily signals are on our roadmap.</p></li>
+        <li><h3>Investors use it</h3><p className="hint">On its strategy page, a vault owner presses <b>Use in my vault</b>. That's one on-chain switch; the agent then trades toward your signal through 1Click. (Opening new vaults from the site is on our roadmap; one vault is live today.)</p></li>
+        <li><h3>You earn on every swap</h3><p className="hint">Each swap a following vault makes pays you {20} bps, inside the swap. {passed ? 'It passes every quality check, so it will rank well.' : `It fails ${gates.filter((g) => !g.pass).length} of ${gates.length} quality checks; strong strategies get followed, so consider improving it first.`}</p></li>
       </ol>
-      <div className="row" style={{ marginTop: 12 }}><button className="ghost" onClick={onCopy}>{copied ? 'Link copied' : 'Copy a link to this formula'}</button><Link className="btn ghost" href="/strategies/">Browse live strategies</Link></div>
+      <div className="row" style={{ marginTop: 12 }}><button className="ghost" onClick={onCopy}>{copied ? 'Link copied' : 'Copy a link to this formula'}</button><a className="btn" href="#save">Save it as a strategy ↓</a><Link className="btn ghost" href="/strategies/">Browse live strategies</Link></div>
       <p className="hint" style={{ marginBottom: 0 }}>Backtests show the past. Past results don't promise future ones.</p>
     </section>
+    <PublishStrategy key={r.expression + JSON.stringify(r.settings)} r={r} expr={r.expression} defaultName={meta?.name} />
   </>;
 }

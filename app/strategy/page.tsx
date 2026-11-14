@@ -1,5 +1,6 @@
 'use client';
 import { Stat } from '@/components/LabResult';
+import { UseInVault } from '@/components/UseInVault';
 import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -15,7 +16,7 @@ function Inner() {
   const [report, setReport] = useState<any>(null);
   const [curve, setCurve] = useState<any>(null);
   useEffect(() => {
-    loadMarket().then((m) => setS(m.strategies.find((x) => x.account === acct && x.id === id) ?? null)).catch(() => setS(null));
+    loadMarket([acct]).then((m) => setS(m.strategies.find((x) => x.account === acct && x.id === id) ?? null)).catch(() => setS(null));
     fetch(asset(`/data/strategy-report-${id}.json`)).then((r) => (r.ok ? r.json() : null)).then(setReport).catch(() => {});
     fetch(asset(`/data/curve-${id}.json`)).then((r) => (r.ok ? r.json() : null)).then(setCurve).catch(() => {});
   }, [acct, id]);
@@ -28,8 +29,9 @@ function Inner() {
       <div className="eyebrow">{c.visibility === 'hidden' ? 'Hidden logic' : 'Public logic'} · by {acct}</div>
       <h1 style={{ fontSize: 32 }}>{c.name}</h1>
       <p className="lead" style={{ fontSize: 16 }}>{c.description}</p>
-      <div className="row"><Link className="btn" href="/vaults/">See vaults that follow strategies</Link><span className="hint">{c.fee.bps} bps per follower swap, paid inside 1Click</span></div>
+      <div className="row"><a className="btn" href="#use">Use in my vault</a><Link className="btn ghost" href="/vaults/">See vaults</Link><span className="hint">{c.fee.bps} bps per follower swap to the researcher, paid inside 1Click</span></div>
     </div>
+    <section className="card"><UseInVault strategyKey={`${acct}/${c.id}`} name={c.name} /></section>
     <section className="card">
       <h2>Backtest ({c.data.from} → {c.data.to}, {st.days} days, fees included)</h2>
       <div className="tiles">

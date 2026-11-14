@@ -3,15 +3,18 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { loadMarket, OPINION_LABEL } from '@/lib/market';
 import { num, pct } from '@/lib/alpha';
+import { useWallet } from '@/lib/wallet';
 
 export default function Strategies() {
   const [m, setM] = useState<Awaited<ReturnType<typeof loadMarket>> | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  useEffect(() => { loadMarket().then(setM).catch((e) => setErr(String(e.message ?? e))); }, []);
+  const { accountId } = useWallet();
+  useEffect(() => { loadMarket([accountId]).then(setM).catch((e) => setErr(String(e.message ?? e))); }, [accountId]);
   return <>
     <div className="hero" style={{ paddingTop: 8 }}>
       <div className="eyebrow">Strategies</div>
       <h1 style={{ fontSize: 32 }}>Pick a strategy for your vault.</h1>
+      <div className="row" style={{ marginBottom: 12 }}><Link className="btn" href="/lab/">+ Create a strategy</Link><span className="hint">Build one with NEAR AI or your own formula, then save it on-chain from your wallet.</span></div>
       <p className="lead" style={{ fontSize: 16 }}>Read live from the <code>top-notch.near</code> registry. Every card, signal and audit is timestamped on-chain, so no one can backdate a track record.</p>
     </div>
     {err && <section className="card">Could not read the registry: {err}</section>}
@@ -30,6 +33,7 @@ export default function Strategies() {
             <div className="tile"><span>Unseen-data Sharpe</span><b className={st.oos_sharpe >= 0 ? 'pos' : 'neg'}>{num(st.oos_sharpe)}</b></div>
           </div>
           <p className="hint">{c.fee.bps} bps per swap to <code>{s.account}</code> · {s.followers.length} vault agent{s.followers.length === 1 ? '' : 's'} following · {s.signals.length} signals on-chain</p>
+          <div className="row"><Link className="btn" href={`/strategy/?a=${encodeURIComponent(s.account)}&id=${encodeURIComponent(s.id)}#use`}>Use in my vault</Link><Link className="btn ghost" href={`/strategy/?a=${encodeURIComponent(s.account)}&id=${encodeURIComponent(s.id)}`}>Details</Link></div>
         </section>;
       })}
     </div>
