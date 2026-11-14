@@ -8,6 +8,7 @@ import { asset, DEMO_VAULT } from './config';
 import { loadMarket } from './market';
 import { loadVault } from './vault';
 import { prices } from './oneclick';
+import { isPublic } from './vaults';
 
 export type Source = 'live' | 'simulated';
 
@@ -157,9 +158,10 @@ export async function loadLeaderboards() {
     return [{ id: `sim-${String(i + 1).padStart(2, '0')}`, source: 'simulated' as const, strategy: `${s.account}/${s.id}`, strategyName: s.card.json.name, deposit: p.deposit, audit: null, ...r }];
   });
 
+  const listed = await isPublic(vault.id, vault.owner).catch(() => true); // owners can hide their vault
   const strategies: StrategyRow[] = market.strategies.map((s) => {
     const key = `${s.account}/${s.id}`, st = s.card.json.stats;
-    const liveF = live.strategy === key ? [live] : [];
+    const liveF = listed && live.strategy === key ? [live] : [];
     const simF = sims.filter((x) => x.strategy === key);
     return {
       key, account: s.account, id: s.id, name: s.card.json.name, visibility: s.card.json.visibility, audit: s.audit?.opinion ?? null,
@@ -169,5 +171,5 @@ export async function loadLeaderboards() {
     };
   });
 
-  return { investors: [live, ...sims], strategies };
+  return { investors: listed ? [live, ...sims] : sims, strategies };
 }

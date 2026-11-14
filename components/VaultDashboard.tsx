@@ -9,6 +9,7 @@ import { short } from '@/lib/near';
 import { useWallet } from '@/lib/wallet';
 import { SignedNote } from './SignedNote';
 import { OwnerControls } from './OwnerControls';
+import { isExample } from '@/lib/vaults';
 
 type Trade = { at: string; from: string; to: string; usd: number; txHash: string; depositAddress: string; status: string; amountOut?: string; signal_date: string; appFees: { recipient: string; fee: number }[] };
 type Quote = { from: string; to: string; usd: number; out?: string; outUsd?: string; eta?: number; error?: string };
@@ -57,12 +58,14 @@ export function VaultDashboard({ id }: { id: string }) {
 
   const onlyOwnerKey = v.fullKeys.length === 1 && v.fullKeys[0] === ownerKey;
 
+  const example = isExample(v.id) && !isOwner;
   return (
     <>
+      {example && <div className="toast ok" style={{ marginTop: 0, marginBottom: 16 }}><b>This is the example vault.</b> It's a real vault on NEAR mainnet with a small real deposit, run by the Top Notch team so you can check how a vault works. It isn't yours: connect your own wallet on <Link href="/vault/">My vault</Link> to see yours, or browse <Link href="/vaults/">public vaults</Link>.</div>}
       <section className="card">
         <div className="spread">
           <div>
-            <div className="eyebrow">Your vault on NEAR</div>
+            <div className="eyebrow">{isOwner ? 'Your vault on NEAR' : example ? 'Example vault · real funds on NEAR mainnet' : 'A vault on NEAR'}</div>
             <h2 style={{ fontSize: 24, margin: '4px 0' }}><a href={explorerAccount(v.id)} target="_blank" rel="noopener">{v.id}</a></h2>
             <div className="hint">Owner <code title={v.owner}>{short(v.owner, 12)}</code>{isOwner && <> · <span className="pill ok">that's you</span></>} · agent <code>{v.agent}</code></div>
           </div>

@@ -4,6 +4,7 @@ import { ASSETS, explorerTx } from '@/lib/config';
 import { entries, type VaultState } from '@/lib/vault';
 import { toRaw } from '@/lib/near';
 import { useWallet } from '@/lib/wallet';
+import { REGISTRY, isPublic, visibilityRecord } from '@/lib/vaults';
 
 type Result = { ok: boolean; text: string; tx?: string };
 const reason = (e: unknown) => {
@@ -20,6 +21,17 @@ export function OwnerControls({ vault, isOwner, onDone }: { vault: VaultState; i
   const [amount, setAmount] = useState('0.5');
   const [strategies, setStrategies] = useState<{ value: string; label: string }[]>([]);
   const [strategy, setStrategy] = useState(vault.policy.strategy);
+  const [listed, setListed] = useState<boolean | null>(null);
+  useEffect(() => { isPublic(vault.id, vault.owner).then(setListed).catch(() => setListed(true)); }, [vault.id, vault.owner]);
+  async function setVisibility(pub: boolean) {
+    setBusy(true); setRes(null);
+    try {
+      const tx = await call({ receiverId: REGISTRY, method: 'publish_mandate', args: { mandate: visibilityRecord(vault.id, pub) }, gasTgas: 30 });
+      setListed(pub);
+      setRes({ ok: true, text: pub ? 'Your vault is listed on the public vaults page.' : 'Your vault is now private: it no longer appears in the public list.', tx });
+    } catch (e) { setRes({ ok: false, text: reason(e), tx: (e as { tx?: string }).tx }); }
+    setBusy(false);
+  }
 
   useEffect(() => {
     entries(vault.strategy.account).then((es) => {
@@ -66,6 +78,10 @@ export function OwnerControls({ vault, isOwner, onDone }: { vault: VaultState; i
             <select value={strategy} onChange={(e) => setStrategy(e.target.value)} style={{ width: '100%', margin: '6px 0' }}>{strategies.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select>
             <p className="hint">The agent trades toward the new strategy's signal from its next run.</p>
             <button disabled={busy || strategy === vault.policy.strategy} onClick={() => run('Strategy switched', 'set_policy', { policy: { ...vault.policy, strategy } }, 30)}>Switch</button></div>
+          <div className="tile"><h3>Public or private</h3>
+            <p className="hint">{listed == null ? 'Checking…' : listed ? 'Public: listed on the public vaults page and leaderboard.' : 'Private: hidden from the public list. Anyone with the exact address can still read it on-chain.'}</p>
+            <p className="hint">One record on the <code>{REGISTRY}</code> registry, signed by you. Only the owner's record counts.</p>
+            <button className="ghost" disabled={busy || listed == null} onClick={() => setVisibility(!listed)}>{listed ? 'Make private' : 'Make public'}</button></div>
         </div>
       </>}
 

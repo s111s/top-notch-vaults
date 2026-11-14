@@ -28,7 +28,7 @@ function Inner() {
       <div className="eyebrow">{c.visibility === 'hidden' ? 'Hidden logic' : 'Public logic'} · by {acct}</div>
       <h1 style={{ fontSize: 32 }}>{c.name}</h1>
       <p className="lead" style={{ fontSize: 16 }}>{c.description}</p>
-      <div className="row"><Link className="btn" href="/vault/">Follow it with a vault</Link><span className="hint">{c.fee.bps} bps per follower swap, paid inside 1Click</span></div>
+      <div className="row"><Link className="btn" href="/vaults/">See vaults that follow strategies</Link><span className="hint">{c.fee.bps} bps per follower swap, paid inside 1Click</span></div>
     </div>
     <section className="card">
       <h2>Backtest ({c.data.from} → {c.data.to}, {st.days} days, fees included)</h2>

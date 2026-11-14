@@ -40,7 +40,7 @@ export default function Home() {
       <p className="lead">Pick a strategy ranked by its returns and its honesty checks. An AI agent trades your NEAR vault daily through NEAR Intents, can never take your money, and NEAR AI Cloud signs a note of every day's work.</p>
       <div className="row">
         <Link className="btn" href="/leaderboard/">See the top strategies</Link>
-        <Link className="btn ghost" href="/vault/">See the live vault</Link>
+        <Link className="btn ghost" href="/vaults/">See live vaults</Link>
         <Link className="btn ghost" href="/lab/">Build one with AI</Link>
         {!accountId && <button className="ghost" onClick={connect} disabled={!ready}>Connect wallet</button>}
       </div>
@@ -58,7 +58,7 @@ export default function Home() {
     </section>
 
     <section className="card">
-      <div className="spread"><h2 style={{ margin: 0 }}>Live on mainnet right now</h2><Link href="/vault/">Open the vault →</Link></div>
+      <div className="spread"><h2 style={{ margin: 0 }}>Example vault, live on mainnet</h2><Link href="/vault/?id=vault-1.top-notch.near">Open the example vault →</Link></div>
       {v ? <div className="tiles" style={{ marginTop: 14 }}>
         <div className="tile"><b>${v.equity.toFixed(2)}</b><span>in <code>{v.id}</code></span></div>
         <div className="tile"><b>{v.fullKeys.length}</b><span>full-access key: the investor's</span></div>
