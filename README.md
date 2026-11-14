@@ -52,8 +52,10 @@ App: Next.js 15 + React 19 + TypeScript, static export to GitHub Pages. No backe
    **You should see** the vault contract reject it: *"only the owner"*. (Real mainnet tx, ~0.0003 NEAR gas.) The vault's owner sees Pause, Withdraw and Switch strategy instead.
 6. **Open Strategies → "Ecosystem 2-day reversal".**
    **You should see** the backtest vs holding NEAR, the five listing gates (it honestly fails out-of-sample), its public formula, a **Clean** audit with four ✓ checks and a letter signed in NEAR AI Cloud, and its on-chain signals.
-7. **Open the Lab**, click *Ride the trend* or type `rank(ts_mean(returns, 14)) - 0.5`, press **Run backtest**.
-   **You should see** "$100 became $X. Holding NEAR: $Y", four stats, an equity curve and the gates, computed in your browser.
+7. **Open the Lab.** In *Build with AI* pick **Dip buying**, keep **Trend filter**, press **Build my strategy**.
+   **You should see** *Trend-Filtered Dip Buy*: `-ts_sum(returns, 3) * (close > ts_mean(close, 30))` with a plain-English summary, how each part works and when it loses money, backtested right below ("$100 became $X. Holding NEAR: $Y", stats, curve, gates).
+   **Press "Verify it's really from NEAR AI".** **You should see** five ✓: the sha256 of the exact prompt and of the raw answer match what the TEE signed, the formula shown is in that answer, the ECDSA signature recovers to `0xfe00…337e`, and NEAR AI Cloud's live attestation reports that address.
+   Optional, pay-as-you-go: *Generate fresh* with your own key from cloud.near.ai runs the same flow live. Or write your own formula below, e.g. `rank(ts_mean(returns, 14)) - 0.5`.
 8. **Open Leaderboard.**
    **You should see** *Top strategies* ranked by the Top Notch score (Dip in an uptrend first: best out-of-sample Sharpe and lowest drawdown), with buttons to rank by trusted investors, funds invested, lowest drawdown, Sharpe or out-of-sample Sharpe. Switch to *Top investors* to rank vaults by profit %, profit $, amount traded, win rate or the score. `vault-1.top-notch.near` is tagged **Live on mainnet**; the other rows are tagged **Simulated** (computed from each strategy's backtest) and the checkbox hides them.
 9. **Open** `/audit/` and press **Run the audit**.
