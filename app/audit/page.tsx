@@ -26,7 +26,7 @@ function Inner() {
       <section className="card">
         <div className="row"><span className={`pill ${r.opinion === 'clean' ? 'ok' : 'bad'}`} style={{ fontSize: 15, padding: '4px 12px' }}>{r.opinion[0].toUpperCase() + r.opinion.slice(1)} opinion</span>
           <span className="hint">{r.trades.length} trades tested since the mandate, {r.findings.length} findings · report sha256 <code>{r.report_hash.slice(0, 16)}…</code></span></div>
-        <p>{OPINION_TEXT[r.opinion]}</p>
+        <p>{OPINION_TEXT[r.opinion]?.short}</p>
       </section>
       {r.trades.map((t: any) => <section className="card" key={t.tx}>
         <div className="spread"><h3 style={{ margin: 0 }}>#{t.n} · {t.in.symbol} → {t.out.symbol} · ${t.in.usd.toFixed(2)}</h3><a href={explorerTx(t.tx)} target="_blank" rel="noopener">{t.time.slice(0, 16).replace('T', ' ')} UTC</a></div>
